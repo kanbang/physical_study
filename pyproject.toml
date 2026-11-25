@@ -1,0 +1,21 @@
+[project]
+name = "physics-olympiad-lab"
+version = "1.0.0"
+description = "竞物台 · 初高中物理竞赛辅助学习工具（Python 轻量后端）"
+authors = [{ name = "WorkBuddy", email = "noreply@example.com" }]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "fastapi>=0.115,<0.116",
+    "uvicorn>=0.30,<0.31",
+    "httpx>=0.27,<0.29",
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.3,<9.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

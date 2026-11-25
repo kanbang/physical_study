@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>竞物台 · 初高中物理竞赛辅助学习工具（含轻量后端）</title>
+<style>
+:root{
+  --bg:#f4f6fb; --surface:#ffffff; --surface2:#f7f9fd; --line:#e3e9f3;
+  --ink:#17223c; --ink2:#4c5872; --ink3:#8a95ad;
+  --brand:#2f56cc; --brand2:#5b7ee8; --brandSoft:#e9efff;
+  --accent:#d97633; --accentSoft:#fdf0e4;
+  --ok:#0d8266; --okSoft:#e4f5ef; --warn:#b77a10; --warnSoft:#fdf4de;
+  --err:#c33c42; --errSoft:#fdeced;
+  --shadow:0 2px 10px rgba(28,45,90,.055);
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--brand)}
+.app{display:flex;min-height:100vh}
+/* ---------- sidebar ---------- */
+.sidebar{width:230px;flex:0 0 230px;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:5}
+.brand{display:flex;align-items:center;gap:11px;padding:22px 20px 18px}
+.brand .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#2f56cc,#6b8cf0);display:grid;place-items:center;box-shadow:0 4px 12px rgba(47,86,204,.28)}
+.brand .logo svg{width:24px;height:24px}
+.brand b{font-size:16px;letter-spacing:.5px;display:block}
+.brand small{display:block;color:var(--ink3);font-size:11px;letter-spacing:1.1px;margin-top:-2px}
+.nav{padding:6px 12px;display:flex;flex-direction:column;gap:3px;overflow:auto;flex:1}
+.nav .group{font-size:11px;color:var(--ink3);letter-spacing:1.5px;padding:14px 10px 5px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;padding:10px 12px;border-radius:9px;text-align:left;color:var(--ink2);font-weight:500;transition:.15s}
+.nav button:hover{background:var(--surface2);color:var(--ink)}
+.nav button.active{background:var(--brandSoft);color:var(--brand);font-weight:650}
+.nav button .ic{width:18px;height:18px;flex:0 0 18px;opacity:.85}
+.nav button .badge{margin-left:auto;background:var(--err);color:#fff;border-radius:20px;font-size:10px;padding:1px 6px;font-weight:700}
+.sidefoot{padding:14px 18px 18px;border-top:1px solid var(--line);font-size:11px;color:var(--ink3)}
+.sidefoot b{color:var(--ink2)}
+/* ---------- main ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:64px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 28px;position:sticky;top:0;z-index:4}
+.crumb{font-weight:650;font-size:15px}
+.crumb span{color:var(--ink3);font-weight:400;font-size:12px;margin-left:10px}
+.topbar .spacer{flex:1}
+.pill{background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--ink2);white-space:nowrap}
+.pill b{color:var(--brand)}
+.content{padding:26px 28px 60px;max-width:1400px;width:100%;margin:0 auto}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+h2.sec{font-size:19px;margin:0 0 4px;letter-spacing:.3px}
+p.sub{margin:0 0 20px;color:var(--ink2);font-size:13px}
+h3{font-size:15px;margin:0 0 10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow)}
+.pad{padding:18px 20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.muted{color:var(--ink3)}
+.tiny{font-size:11.5px}
+.mono{font-family:var(--mono)}
+.eq{font-family:var(--mono);font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;display:block;color:#20346b;letter-spacing:.1px}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--line);color:var(--ink2);white-space:nowrap}
+.tag.blue{background:var(--brandSoft);border-color:#d5e0ff;color:var(--brand)}
+.tag.orange{background:var(--accentSoft);border-color:#f4dcc4;color:var(--accent)}
+.tag.green{background:var(--okSoft);border-color:#c9eadf;color:var(--ok)}
+.tag.red{background:var(--errSoft);border-color:#f5d0d2;color:var(--err)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:550;color:var(--ink2);transition:.15s}
+.btn:hover{border-color:var(--brand2);color:var(--brand);background:var(--brandSoft)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:#2447b5;color:#fff}
+.btn.sm{padding:4px 9px;font-size:11.5px}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--ink2)}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.input,select.input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 11px;outline:none;width:100%}
+.input:focus{border-color:var(--brand2);box-shadow:0 0 0 3px var(--brandSoft)}
+.divider{height:1px;background:var(--line);margin:14px 0}
+.notice{border-left:3px solid var(--brand);background:var(--brandSoft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:12.5px;color:#2a407f}
+.notice.warn{border-color:var(--warn);background:var(--warnSoft);color:#8a5b09}
+.notice.ok{border-color:var(--ok);background:var(--okSoft);color:#0b6a54}
+.notice.err{border-color:var(--err);background:var(--errSoft);color:#a02f34}
+.kv{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--ink2)}
+.kv .v{font-family:var(--mono);font-weight:600;color:#20346b;white-space:nowrap}
+.bar{height:7px;border-radius:6px;background:var(--surface2);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:6px;background:var(--brand2);transition:width .4s}
+/* stat cards */
+.stat{padding:15px 17px;position:relative;overflow:hidden}
+.stat .lab{font-size:11.5px;color:var(--ink3);letter-spacing:.4px}
+.stat .num{font-size:26px;font-weight:700;line-height:1.3;margin-top:4px;font-family:var(--mono)}
+.stat .foot{font-size:11px;color:var(--ink3)}
+.stat .stripe{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--brand)}
+/* accordion / list cards */
+.item{border:1px solid var(--line);border-radius:11px;background:var(--surface);overflow:hidden;transition:.15s}
+.item:hover{border-color:#c8d5ef}
+.item .head{padding:13px 15px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.item .head .t{font-weight:650;font-size:13.5px;flex:1;min-width:0}
+.item .head .arw{color:var(--ink3);font-size:11px;transition:.2s}
+.item.open .head .arw{transform:rotate(90deg)}
+.item .body{display:none;padding:0 15px 16px;border-top:1px solid var(--line)}
+.item.open .body{display:block}
+.item .body .blk{margin-top:13px}
+.item .body .blk>label{display:block;font-size:11px;letter-spacing:1px;color:var(--ink3);margin-bottom:6px}
+ul.clean{margin:0;padding-left:18px}
+ul.clean li{margin:4px 0;font-size:12.8px;color:var(--ink2)}
+ol.clean{margin:0;padding-left:20px}
+ol.clean li{margin:5px 0;font-size:12.8px;color:var(--ink2)}
+/* roadmap */
+.stage{padding:16px 17px}
+.stage .num{font-family:var(--mono);font-size:11px;color:var(--brand);font-weight:700;letter-spacing:1px}
+.stage h4{margin:3px 0 6px;font-size:14px}
+.stage .meta{font-size:11px;color:var(--ink3);margin-bottom:10px}
+.check{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--brand)}
+.check.done span{text-decoration:line-through;color:var(--ink3)}
+/* lab */
+.labwrap{display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px}
+.simlist{display:flex;flex-direction:column;gap:6px}
+.simlist button{text-align:left;border:1px solid transparent;background:transparent;padding:9px 11px;border-radius:8px;font-size:12.5px;color:var(--ink2)}
+.simlist button.on{background:var(--brandSoft);border-color:#d5e0ff;color:var(--brand);font-weight:650}
+.canvasbox{position:relative;background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+canvas{display:block;width:100%;height:420px}
+.param{margin-bottom:11px}
+.param .pl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2);margin-bottom:3px}
+.param .pl b{font-family:var(--mono);color:var(--brand)}
+input[type=range]{width:100%;accent-color:var(--brand);height:16px}
+.readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;margin-top:6px}
+.simnote{font-size:12px;color:var(--ink2);background:var(--surface2);border-radius:8px;padding:10px 13px;margin-top:12px}
+.simnote b{color:var(--ink)}
+/* practice */
+.praclist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pcard{padding:13px 15px;cursor:pointer;transition:.15s}
+.pcard:hover{border-color:var(--brand2);transform:translateY(-1px)}
+.pcard .pt{font-size:13px;font-weight:650;margin:7px 0 4px;line-height:1.45}
+.pcard .pm{font-size:11px;color:var(--ink3)}
+.blankrow{display:flex;align-items:center;gap:9px;margin:9px 0;font-size:12.5px}
+.blankrow label{width:150px;color:var(--ink2);flex:0 0 150px}
+.blankrow .unit{color:var(--ink3);font-size:12px;width:70px}
+.hint{padding:10px 13px;border-radius:8px;background:var(--surface2);border:1px dashed var(--line);font-size:12.8px;margin:7px 0}
+.sol{background:var(--surface2);border-radius:9px;padding:14px 16px;font-size:13px;margin-top:12px}
+.sol .step{margin:7px 0}
+.sol .step b{color:var(--brand)}
+/* toolbox */
+.dimtable td,.dimtable th{border-bottom:1px solid var(--line);padding:5px 8px;font-size:12px;text-align:left}
+.dimtable th{color:var(--ink3);font-weight:600;font-size:11px}
+.dimtable tr:last-child td{border-bottom:0}
+.resultbox{min-height:76px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);padding:12px 14px;font-size:12.8px;margin-top:12px}
+/* ai chat */
+.chatbox{display:flex;flex-direction:column;gap:11px;max-height:54vh;overflow:auto;padding:4px 2px;scroll-behavior:smooth}
+.chatmsg{max-width:92%;border-radius:13px;padding:11px 14px;font-size:12.8px;line-height:1.85;white-space:pre-wrap;word-break:break-word}
+.chatmsg.user{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+.chatmsg.bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--line);border-bottom-left-radius:4px;max-width:100%}
+.chatmsg .meta{font-size:10.5px;color:var(--ink3);margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cardform{margin-top:10px;background:#fff;border:1px dashed var(--brand2);border-radius:10px;padding:12px 14px}
+.cardform h4{font-size:13px;color:var(--brand);margin:0 0 2px}
+.cardform .blk2{margin-top:9px}
+.cardform .blk2>label{display:block;font-size:11px;letter-spacing:.5px;color:var(--ink3);margin-bottom:4px}
+.cardform textarea{resize:vertical;min-height:52px;font-family:inherit}
+.ansrow{display:flex;gap:7px;margin:5px 0;align-items:center}
+.ansrow input{padding:6px 9px;font-size:12px}
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(20,32,60,.42);display:none;place-items:center;z-index:20;padding:24px}
+.mask.on{display:grid}
+.modal{background:#fff;border-radius:15px;max-width:760px;width:100%;max-height:86vh;overflow:auto;padding:26px 30px;box-shadow:0 24px 70px rgba(15,30,70,.28)}
+.modal h3{font-size:18px}
+.modal h4{font-size:13px;margin:18px 0 6px;color:var(--brand)}
+.modal p,.modal li{font-size:12.8px;color:var(--ink2)}
+/* misc */
+.empty{text-align:center;padding:36px 16px;color:var(--ink3);font-size:12.5px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin-top:8px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.footer{color:var(--ink3);font-size:11px;text-align:center;margin-top:34px;line-height:1.8}
+@media(max-width:1000px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}.labwrap{grid-template-columns:1fr}.praclist{grid-template-columns:1fr}}
+@media(max-width:720px){.sidebar{width:100%;height:auto;position:relative;flex-basis:auto;border-right:0;border-bottom:1px solid var(--line)}.app{flex-direction:column}.nav{flex-direction:row;overflow:auto;padding:6px}.nav .group{display:none}.nav button{white-space:nowrap;width:auto}.sidefoot{display:none}.topbar{padding:0 16px}.content{padding:18px 14px 40px}.g2,.g3,.g4{grid-template-columns:1fr}.readouts{grid-template-columns:1fr}.blankrow label{flex-basis:110px;width:110px}canvas{height:340px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="2.4" fill="#fff" stroke="none"/><ellipse cx="12" cy="12" rx="10" ry="4.4"/><ellipse cx="12" cy="12" rx="10" ry="4.4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.4" transform="rotate(120 12 12)"/></svg></div>
+      <div><b>竞物台</b><small>PHYSICS OLYMPIAD LAB</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="group">学习闭环</div>
+      <button data-view="dashboard" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>学习总览</button>
+      <button data-view="graph"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="7" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7.4l8 .7M7 8.2l4 7.6M16.5 9.3L13 15.8"/></svg>知识图谱</button>
+      <button data-view="models"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg>物理模型库</button>
+      <button data-view="wonder"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5.9 1.2.9 2.1h5.2c0-.9.3-1.6.9-2.1A6 6 0 0012 3z"/></svg>奇思妙想 <span class="badge" style="background:var(--accent)">趣</span></button>
+      <button data-view="ai"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8 8 0 01-8 8H4l2.2-2.6A8 8 0 1121 12z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/></svg>AI 助手<span class="badge" style="background:var(--brand2)">新</span></button>
+      <button data-view="lab"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v7L5 19a1.5 1.5 0 001.3 2h11.4A1.5 1.5 0 0019 19l-5-9V3"/><path d="M7.5 15h9"/></svg>交互仿真室</button>
+      <button data-view="practice"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg>分级训练场</button>
+      <button data-view="wrong"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 4.5-9 4.5-9-4.5L12 3z"/><path d="M3 12l9 4.5 9-4.5M3 16.5L12 21l9-4.5"/></svg>错题与复习<span class="badge" id="navBadge" style="display:none">0</span></button>
+      <div class="group">工具</div>
+      <button data-view="toolbox"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 00-5 5L3 18l3 3 6.7-6.7a4 4 0 005-5l-2.6 2.6-2.1-2.1L14.7 6.3z"/></svg>解题工具箱</button>
+      <button data-view="about"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>设计说明</button>
+    </nav>
+    <div class="sidefoot" id="sideStatus"><b>正在检测后端…</b><br>学习数据优先写入服务端<br>未启动服务时自动降级到本机缓存</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb" id="crumb">学习总览 <span>把知识点、模型、仿真和错题串成一条闭环</span></div>
+      <div class="spacer"></div>
+      <div class="pill" id="pillSync" style="cursor:pointer" title="点击重新连接后端服务">正在检测后端…</div>
+      <div class="pill" id="pillStreak">连续学习 <b>0</b> 天</div>
+      <div class="pill" id="pillStat">已练 <b>0</b> 题</div>
+    </header>
+    <div class="content">
+
+      <!-- ============ 总览 ============ -->
+      <section class="view active" id="view-dashboard">
+        <h2 class="sec">今天从哪里开始</h2>
+        <p class="sub">先诊断、再建模、后验证。系统按你的练习记录给出下一步建议，所有进度只存在本机。</p>
+        <div class="grid g4" id="statCards"></div>
+        <div class="grid g2" style="margin-top:16px">
+          <div class="card pad">
+            <div class="spread"><h3>能力雷达</h3><span class="tag blue">按领域正确率</span></div>
+            <div id="radar" style="margin-top:8px"></div>
+            <div class="tiny muted" style="margin-top:6px">未练习的领域显示为最内圈，不代表能力为零；数据只来自本机作答记录。</div>
+          </div>
+          <div class="card pad">
+            <div class="spread"><h3>今日任务</h3><button class="btn sm" id="btnRefreshTask">换一批</button></div>
+            <div id="todayTasks" style="margin-top:10px"></div>
+            <div class="divider"></div>
+            <button class="btn primary" id="btnGoPractice">进入训练场</button>
+            <button class="btn" id="btnGoLab" style="margin-left:8px">去做个仿真</button>
+          </div>
+        </div>
+        <div class="card pad" style="margin-top:16px;background:linear-gradient(100deg,#fffdf8,#ffffff)">
+          <div class="spread"><h3>每日一奇 · 今天物理哪里有点怪</h3><span class="tag orange">发现物理的奇妙</span></div>
+          <div id="dailyWonder" style="margin-top:8px"></div>
+        </div>
+        <h2 class="sec" style="margin-top:26px">四阶段进阶路径</h2>
+        <p class="sub">勾选即保存进度。初中竞赛以「受力分析与守恒」为地基，高中竞赛再叠加微积分、刚体与场论方法。</p>
+        <div class="grid g4" id="roadmap"></div>
+      </section>
+
+      <!-- ============ 知识图谱 ============ -->
+      <section class="view" id="view-graph">
+        <h2 class="sec">知识图谱</h2>
+        <p class="sub">每条公式都标注适用条件与易错点 —— 竞赛里用错条件的代价比记不住公式更大。点卡片展开。</p>
+        <div class="card pad" style="margin-bottom:14px">
+          <div class="row">
+            <div class="row" id="levelChips"></div>
+            <div style="width:1px;height:22px;background:var(--line)"></div>
+            <div class="row" id="domChips"></div>
+            <div style="flex:1"></div>
+            <input class="input" id="topicSearch" placeholder="搜索知识点 / 公式…" style="max-width:230px">
+          </div>
+        </div>
+        <div class="grid g2" id="topicList"></div>
+      </section>
+
+      <!-- ============ 模型库 ============ -->
+      <section class="view" id="view-models">
+        <h2 class="sec">物理模型库</h2>
+        <p class="sub">竞赛解题的本质是「识别模型 → 还原约束 → 选守恒量」。每张卡片给出识别信号、建模步骤、关键方程和常见陷阱。</p>
+        <div id="modelList" class="grid g2"></div>
+      </section>
+
+      <!-- ============ 奇思妙想 ============ -->
+      <section class="view" id="view-wonder">
+        <h2 class="sec">奇思妙想 · 物理比想象中更奇怪</h2>
+        <p class="sub">没有标准答案要填，只有「先猜一猜 → 再揭晓 → 回家动手试」。这些问题不为考试，只为让你发现物理的奇妙；猜想可以分享到服务端的猜想墙。</p>
+        <div class="card pad" style="margin-bottom:14px;background:linear-gradient(100deg,#fffaf3,#ffffff)">
+          <div class="spread"><div><h3>奇妙进度</h3><div class="tiny muted" id="wonderProgressText">—</div></div><button class="btn sm" id="btnRandomWonder">随机来一题</button></div>
+          <div class="bar" style="margin-top:10px"><i id="wonderProgressBar" style="width:0%"></i></div>
+        </div>
+        <div class="row" id="wonderChips" style="margin-bottom:14px"></div>
+        <div class="grid g2" id="wonderList"></div>
+        <div class="card pad" style="margin-top:14px">
+          <div class="spread"><h3>共享猜想墙 <span class="tiny muted">服务端存储 · 所有访问者可见</span></h3><button class="btn sm" id="btnRefreshIdeas">刷新</button></div>
+          <div id="ideaWall" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+      <!-- ============ AI 助手 ============ -->
+      <section class="view" id="view-ai">
+        <h2 class="sec">AI 助手 · 把想法和题目整理入库</h2>
+        <p class="sub">把你遇到的题目、冒出来的想法发给 AI，它会整理成卡片草稿；你核对、修改、补全后，一键添加到分级训练场或奇思妙想。未配置在线 AI 时自动使用本地规则模式（只搭骨架，不编答案）。</p>
+        <div class="card pad">
+          <div class="spread">
+            <h3>对话</h3>
+            <span class="tag" id="aiModeTag">检测中…</span>
+          </div>
+          <div class="chatbox" id="chatBox" style="margin-top:10px"></div>
+          <div class="divider"></div>
+          <div class="row" id="aiQuick" style="margin-bottom:9px;flex-wrap:wrap"></div>
+          <div class="row" style="align-items:flex-end;gap:9px">
+            <textarea class="input" id="aiInput" rows="3" style="flex:1" placeholder="例如：我今天遇到一道题：光滑斜面高 1.8 m，滑块从顶端滑下，求底端速度……&#10;或者：我一直好奇，为什么地铁急刹车时吊环会向前摆？"></textarea>
+            <button class="btn primary" id="aiSend">发送</button>
+          </div>
+          <div class="tiny muted" style="margin-top:7px">对话记录随学习数据保存并同步；AI 生成的卡片入库前必须人工核对，数值答案未被独立核验。</div>
+        </div>
+        <div class="card pad" style="margin-top:14px">
+          <details>
+            <summary style="cursor:pointer;color:var(--brand);font-size:13px;font-weight:650">在线 AI 服务设置（可选）</summary>
+            <p class="tiny muted" style="margin:9px 0">支持任何 OpenAI 兼容接口（DeepSeek、通义千问、本地 Ollama 等）。配置保存在服务端 <code>data/ai_config.json</code>；也可用环境变量 <code>AI_BASE_URL / AI_API_KEY / AI_MODEL</code> 覆盖。不配置则使用本地规则模式。</p>
+            <div class="grid g2">
+              <div><label class="tiny muted">接口地址 base_url</label><input class="input mono" id="aiCfgBase" placeholder="https://api.deepseek.com/v1" style="margin-top:4px"></div>
+              <div><label class="tiny muted">模型名 model</label><input class="input mono" id="aiCfgModel" placeholder="deepseek-chat" style="margin-top:4px"></div>
+            </div>
+            <div style="margin-top:9px"><label class="tiny muted">API Key（留空则保持已保存的密钥不变）</label><input class="input mono" type="password" id="aiCfgKey" placeholder="sk-…" style="margin-top:4px"></div>
+            <div class="row" style="margin-top:11px"><button class="btn primary sm" id="aiCfgSave">保存配置</button><span class="tiny muted" id="aiCfgMsg"></span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- ============ 仿真 ============ -->
+      <section class="view" id="view-lab">
+        <h2 class="sec">交互仿真室</h2>
+        <p class="sub">所有轨迹由数值积分实时计算（RK4 / 半隐式），右侧读数同时给出解析解作对照。拖参数会重置当前实验。</p>
+        <div class="labwrap">
+          <div class="card pad" style="align-self:start">
+            <h3 style="margin-bottom:8px">实验选择</h3>
+            <div class="simlist" id="simList"></div>
+            <div class="divider"></div>
+            <h3>参数</h3>
+            <div id="paramBox"></div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn primary sm" id="btnPlay">暂停</button>
+              <button class="btn sm" id="btnReset">重置</button>
+              <select class="input" id="speedSel" style="width:auto;padding:4px 8px;font-size:11.5px">
+                <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="canvasbox"><canvas id="simCanvas"></canvas></div>
+            <div class="card pad" style="margin-top:12px">
+              <div class="spread"><h3>实时读数 · 数值解 vs 解析解</h3><span class="tag green" id="simTimeTag">t = 0.00 s</span></div>
+              <div class="readouts" id="readouts"></div>
+              <div class="simnote" id="simNote"></div>
+              <div class="legend" id="simLegend"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 训练场 ============ -->
+      <section class="view" id="view-practice">
+        <h2 class="sec">分级训练场</h2>
+        <p class="sub">先给三级提示，再要答案，最后才给完整解析。答错可按错因归档，自动进入间隔复习队列。</p>
+        <div class="card pad" style="margin-bottom:14px">
+          <div class="row" id="pracChips"></div>
+        </div>
+        <div id="pracDetail"></div>
+        <div class="praclist" id="pracList"></div>
+      </section>
+
+      <!-- ============ 错题本 ============ -->
+      <section class="view" id="view-wrong">
+        <h2 class="sec">错题与间隔复习</h2>
+        <p class="sub">复习间隔 1 → 3 → 7 → 15 → 30 天；每次答对后延后，答错则退回第一档。到期题目会出现在总览的今日任务里。</p>
+        <div class="grid g4" id="wrongStats"></div>
+        <div class="card pad" style="margin-top:14px">
+          <div class="spread"><h3>错题清单</h3><button class="btn sm" id="btnReviewDue">开始复习到期题目</button></div>
+          <div id="wrongList" style="margin-top:12px"></div>
+        </div>
+        <div class="card pad" style="margin-top:14px">
+          <h3>错因分布</h3><div id="reasonChart" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+      <!-- ============ 工具箱 ============ -->
+      <section class="view" id="view-toolbox">
+        <h2 class="sec">解题工具箱</h2>
+        <p class="sub">量纲是竞赛里最便宜的验算：先查量纲，再查极限，最后才代入数字。</p>
+        <div class="grid g2">
+          <div class="card pad">
+            <div class="spread"><h3>量纲分析器</h3><span class="tag blue">支持 + − × ÷ ^ sqrt() =</span></div>
+            <p class="tiny muted" style="margin:6px 0 10px">输入表达式或等式，例如 <code>F = m*a</code>、<code>T = 2*pi*sqrt(L/g)</code>。加减项量纲必须相同，乘除按指数运算。</p>
+            <input class="input mono" id="dimExpr" value="F = m*a" placeholder="输入表达式">
+            <div class="row" style="margin-top:9px" id="dimExamples"></div>
+            <div class="resultbox" id="dimResult"></div>
+            <div class="divider"></div>
+            <details>
+              <summary class="tiny" style="cursor:pointer;color:var(--brand)">可用变量与量纲（点击展开）</summary>
+              <table class="dimtable" style="width:100%;margin-top:8px"><thead><tr><th>变量</th><th>含义</th><th>量纲</th></tr></thead><tbody id="dimTable"></tbody></table>
+            </details>
+          </div>
+          <div class="card pad">
+            <h3>物理常数速查</h3>
+            <input class="input" id="constSearch" placeholder="搜索常数…" style="margin:8px 0 10px">
+            <div id="constList" style="max-height:230px;overflow:auto"></div>
+            <div class="divider"></div>
+            <h3>解题自检清单</h3>
+            <div id="checkList" style="margin-top:8px"></div>
+          </div>
+        </div>
+        <div class="grid g2" style="margin-top:14px">
+          <div class="card pad">
+            <h3>竞赛常用近似与展开</h3>
+            <div id="approxList" style="margin-top:8px"></div>
+          </div>
+          <div class="card pad">
+            <h3>常用微元与积分结论</h3>
+            <div id="integralList" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 设计说明 ============ -->
+      <section class="view" id="view-about">
+        <h2 class="sec">设计说明</h2>
+        <p class="sub">这份说明既是产品设计文档，也是工具的边界声明 —— 哪些事能做、哪些近似被采用、哪些结论不该由它给出。</p>
+        <div id="aboutBody"></div>
+      </section>
+
+      <div class="footer">竞物台 Physics Olympiad Lab · 单文件前端 + Poetry 隔离的 Python/FastAPI 后端 · 学习数据经 /api/state 落盘到服务端 data/store.json，服务不可用时自动降级为 localStorage<br>内容为教学辅助，公式与数值已标注适用条件；趣味思考题标注争议结论；不替代教材、真题与教师指导。</div>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mask"><div class="modal" id="modal"></div></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   竞物台 · 数据层
+   所有公式均为作者编写的静态内容；题目答案经独立数值核验。
+   ===================================================================== */
+const TOPICS = [
+ {id:'k1',level:'初中',dom:'力学',name:'运动学、图像与相对运动',
+  formulas:[['v = s / t','仅匀速；s-t 图斜率 = v，v-t 图面积 = 位移'],['v相 = v₁ − v₂','同一直线相向取和、同向取差'],['s = v₀t + ½at²','匀变速，a 恒定']],
+  cond:'相对速度法只适用于惯性系；图像法要求同一参考系。',
+  trap:'把平均速度当瞬时速度；追及问题漏掉初始距离；往返奔跑类题目逐段求和。',
+  ext:'竞赛常用换参考系 + 不变量（如狗跑路程题只抓时间）；v-t 图面积法处理变加速。'},
+ {id:'k2',level:'初中',dom:'力学',name:'受力分析与平衡',
+  formulas:[['ΣF = 0','静力平衡；正交分解后两方向分别列式'],['f ≤ μN','静摩擦是自调节的，滑动摩擦才取等号'],['F₁l₁ = F₂l₂','力矩平衡，l 是垂直力臂而非杆长']],
+  cond:'摩擦力方向由相对运动（趋势）决定；力矩平衡须选同一转轴。',
+  trap:'先入为主把 f 写成 μN；斜拉绳时力臂漏乘 sinθ；漏掉杆自重。',
+  ext:'摩擦角 φ = arctan μ 与自锁；三力平衡共点；整体法与隔离法切换。'},
+ {id:'k3',level:'初中',dom:'力学',name:'压强、浮力与液面',
+  formulas:[['p = ρgh','液体内部，h 为到自由液面的竖直深度'],['F浮 = ρ液 g V排','阿基米德原理，V排 是浸入体积'],['浮沉：ρ物 < ρ液 上浮','漂浮时 F浮 = G']],
+  cond:'p=ρgh 不适用于密闭加压气体的附加压强传递；浮力需物体与液体接触。',
+  trap:'把物体体积当 V排；容器底压力变化与浮力变化混为一谈；冰块熔化后液面问题忽略含杂质。',
+  ext:'浮力变化量 = ρ液 g ΔV排；把液面升降转成体积守恒；密度计与浮力秤。'},
+ {id:'k4',level:'初中',dom:'力学',name:'简单机械、功与效率',
+  formulas:[['W = Fs cosα','α 为力与位移夹角'],['P = W / t = Fv','v 为沿力方向的速度'],['η = W有 / W总','滑轮组 η = G/(nF)']],
+  cond:'机械效率只计有用功与总功；不计绳重摩擦时理想机械 η=1。',
+  trap:'误数滑轮组承重绳段数 n；把额外功只算动滑轮重而漏摩擦。',
+  ext:'功率极值问题（P = Fv 与阻力平衡）；变力做功的图像面积法。'},
+ {id:'k5',level:'初中',dom:'电磁',name:'直流电路与最大功率',
+  formulas:[['I = U / R','部分电路欧姆定律，纯电阻'],['P = UI = I²R = U²/R','电功率；焦耳热 Q = I²Rt'],['串并联等效','串联分压、并联分流']],
+  cond:'电源有内阻 r 时端电压 U = E − Ir；非纯电阻电路不能套 I=U/R 求热功率。',
+  trap:'把电源输出功率最大与某电阻自身功率最大混淆；滑动变阻器动态分析漏内阻。',
+  ext:'P(R) = E²R/(R₀+R)² 在 R = R₀ 取最大（均值不等式）；等效电源法、电桥。'},
+ {id:'k6',level:'初中',dom:'光学',name:'几何光学与全反射',
+  formulas:[['n₁ sinθ₁ = n₂ sinθ₂','折射定律，角从法线量起'],['sin C = n₂/n₁','由光密到光疏且 n₁ > n₂ 才可能全反射'],['1/f = 1/u + 1/v','薄透镜，注意实正虚负号约定']],
+  cond:'全反射必须同时满足「从光密到光疏」与「入射角 ≥ 临界角」。',
+  trap:'把临界角 sinC 当成 tanC；水中亮圆半径用错几何关系；透镜成像漏符号约定。',
+  ext:'光路可逆；视深 h/n；多次反射成像；最小偏向角与色散。'},
+ {id:'k7',level:'初中',dom:'热学',name:'热量、热平衡与物态变化',
+  formulas:[['Q = cmΔT','无相变、比热容视为常数'],['Q放 = Q吸','孤立系统热平衡方程'],['Q = mq 或 mL','燃料燃烧热 / 相变潜热']],
+  cond:'热平衡要求无热损失；涉及相变要分段计算并加潜热。',
+  trap:'沸水温升后忘记汽化潜热；热效率把 Q吸 与 Q放 颠倒；单位 kJ/J 混用。',
+  ext:'混合法测比热；热平衡迭代；热传导稳态（初中竞赛加赛点）。'},
+ {id:'k8',level:'高中',dom:'方法',name:'竞赛数学工具与微元法',
+  formulas:[['W = ∫F(x)dx','变力做功；F-x 图面积'],['v = dx/dt，a = dv/dt','导数链 a = v dv/dx 极常用'],['(1+x)ⁿ ≈ 1 + nx','|x| ≪ 1 的一阶近似']],
+  cond:'微元法要求所取微元内物理量可视为常量，且求和方向一致。',
+  trap:'微元取错方向导致积分上下限颠倒；把二阶小量当一阶保留；忽略矢量性。',
+  ext:'质心 x_c = ∫x dm/m；壳层法/圆盘法求转动惯量；泰勒展开判小角近似误差。'},
+ {id:'k9',level:'高中',dom:'力学',name:'牛顿定律进阶与非惯性系',
+  formulas:[['F = ma','仅在惯性系成立'],['F惯 = −ma₀','平动非惯性系中的惯性力'],['约束关系','绳长不变 ⇒ 沿绳速度/加速度分量相等']],
+  cond:'引入惯性力后不再额外考虑参考系加速；惯性力没有反作用力。',
+  trap:'连接体约束写错倍数关系；斜面加速参考系里漏惯性力；把静摩擦直接取 μN。',
+  ext:'摩擦角与自锁 tanθ ≤ μ；整体质心运动定理；变质量（链条/落沙）。'},
+ {id:'k10',level:'高中',dom:'力学',name:'动量、能量与质心系',
+  formulas:[['p = mv，I = ∫F dt','动量定理'],['Σp守恒','合外力为零；某一方向守恒可单独用'],['e = (v₂′−v₁′)/(v₁−v₂)','恢复系数，e=1 完全弹性'],['E_cm = ½μv相²','μ = m₁m₂/(m₁+m₂)']],
+  cond:'弹簧压缩最大 ⇔ 相对速度为零 ⇔ 共速；机械能守恒要求无非保守力做功。',
+  trap:'把共速当成完全非弹性碰撞结束；在质心系里忘记变换回实验室系。',
+  ext:'多次碰撞递推；质心系中弹性碰撞只是速度反向；爆炸/反冲模型。'},
+ {id:'k11',level:'高中',dom:'力学',name:'刚体转动与滚动',
+  formulas:[['J = ∫r²dm','均匀细杆绕端 J = ⅓mL²，绕心 ¹⁄₁₂mL²'],['M = Jβ','转动定律，β 为角加速度'],['L = Jω，ΣM外 = 0 ⇒ L守恒','角动量守恒'],['v = ωR','纯滚动无滑条件']],
+  cond:'J 与转轴有关（平行轴定理 J = J_c + md²）；纯滚动时静摩擦力不做功。',
+  trap:'把细杆当质点（用 mL²/12 或 mL²）；滚动问题误用滑动摩擦 μN 计算能量损失。',
+  ext:'碰撞中的角动量守恒（对支点取矩）；滚动半径比与能量分配；进动定性。'},
+ {id:'k12',level:'高中',dom:'力学',name:'振动、波与多普勒',
+  formulas:[['x = A cos(ωt+φ)','简谐运动；ω² = k/m'],['T₀ = 2π√(L/g)','单摆，仅小角度成立'],['E = ½kA²','简谐总能量'],['v = λf','波速由介质决定']],
+  cond:'T₀ 要求 θ₀ ≪ 1；阻尼振动周期变为 2π/√(ω₀²−β²)。',
+  trap:'把 ½kA² 写成 kA²；大角度仍套小角周期；把波速与质点振动速度混淆。',
+  ext:'精确周期 T = 4√(L/g)K(sin(θ₀/2))；拍频、驻波、多普勒（动源/动观察者公式不同）。'},
+ {id:'k13',level:'高中',dom:'力学',name:'万有引力与天体',
+  formulas:[['F = GMm/r²','球对称质量分布可视为质点'],['v₁ = √(gR) = √(GM/R)','近地环绕速度'],['U = −GMm/r','取无穷远为零势能'],['T² ∝ a³','开普勒第三定律']],
+  cond:'U 为负值；椭圆轨道用半长轴 a 代 r 求周期，不能直接用瞬时 r。',
+  trap:'把引力势能当 mgh（仅近地面小范围）；第二宇宙速度 v₂ = √2 v₁；同步卫星高度要从周期反解。',
+  ext:'有效势能 + 角动量守恒判轨道类型；霍曼转移；双星系统用约化质量。'},
+ {id:'k14',level:'高中',dom:'热学',name:'理想气体与热力学循环',
+  formulas:[['pV = nRT','理想气体状态方程'],['ΔU = Q + W','W 为外界对气体做功（本工具统一口径）'],['单原子 U = ³⁄₂nRT','双原子 ⁵⁄₂nRT'],['η = W净 / Q吸','热机效率']],
+  cond:'Q吸 只统计循环中吸热各段；卡诺效率 η = 1−T_c/T_h 仅两热源可逆循环。',
+  trap:'符号约定不统一导致 ΔU 变号；把矩形循环当成卡诺循环；等容/等压段 C 取错。',
+  ext:'绝热过程 pV^γ = 常量；多方过程；循环净功 = p-V 图包围面积。'},
+ {id:'k15',level:'高中',dom:'电磁',name:'静电场与高斯定理',
+  formulas:[['F = kq₁q₂/r²','库仑定律，点电荷'],['∮E·dS = Q内/ε₀','高斯定理，需对称性'],['E = −∇φ，W = qU','电势与电场关系'],['C = Q/U，W_C = ½CU²','电容与储能']],
+  cond:'高斯定理求 E 只在球/柱/平面对称时可直接提出 E；导体静电平衡内部 E=0。',
+  trap:'把高斯面内电荷与面上电荷混淆；电势零点未定；含介质时 ε 变化。',
+  ext:'镜像法入门；均匀带电球壳内外场；电容器串并联与能量变化（做功去哪了）。'},
+ {id:'k16',level:'高中',dom:'电磁',name:'电路进阶与暂态',
+  formulas:[['ΣI = 0，Σε = ΣIR','基尔霍夫定律'],['戴维南等效','等效电动势 = 开路电压，等效内阻 = 除源后入端电阻'],['τ = RC','RC 暂态时间常数'],['u_C(t) = E(1−e^{−t/τ})','充电']],
+  cond:'除源时电压源短路、电流源开路；含容电路稳态电容支路无电流。',
+  trap:'节点电流方向随意设却不统一；把 τ 当成完全充放电时间（∞ 才完成）。',
+  ext:'电桥平衡；无穷电阻网络自相似；RL 暂态与电感续流。'},
+ {id:'k17',level:'高中',dom:'电磁',name:'磁场与带电粒子',
+  formulas:[['F = qvB sinθ','洛伦兹力，恒垂直于 v，不做功'],['r = mv⊥/(qB)','匀强磁场中圆周半径'],['T = 2πm/(qB)','回旋周期，与速率无关'],['F = BIL','安培力，L 为有效长度']],
+  cond:'v 与 B 平行时不受力；有平行分量时轨迹为螺旋线。',
+  trap:'忘记周期与速度无关；把 v 直接代入而不用垂直分量；边界磁场问题漏几何约束。',
+  ext:'圆形边界磁聚焦；最小磁场面积；霍尔效应；回旋加速器与 D 形盒。'},
+ {id:'k18',level:'高中',dom:'电磁',name:'电磁感应与导轨模型',
+  formulas:[['ε = −dΦ/dt','法拉第定律'],['ε动生 = BLv','棒切割磁感线'],['q = ∫I dt = BLx/R','导轨模型核心桥梁'],['τ = mR/(B²L²)','安培阻尼时间常数']],
+  cond:'导轨光滑、棒与导轨电阻忽略且只有 R；v 指数衰减，理论上永不为零但总位移有限。',
+  trap:'把安培力当恒力用匀变速公式；忘记能量守恒 Q热 = ½mv₀²；含电容/双杆时方程变形。',
+  ext:'动量定理 −BLq = m(v−v₀) 一步求位移；双杆动量守恒；电容版本（棒做简谐/匀加速）。'},
+ {id:'k19',level:'高中',dom:'光学',name:'波动光学',
+  formulas:[['Δx = Lλ/d','双缝干涉条纹间距'],['光程 = n·r','相位差由光程差定'],['d sinθ = kλ','光栅主极大'],['λ = h/p','德布罗意波长']],
+  cond:'干涉需相干光源；薄膜干涉注意半波损失；衍射明显要求缝宽接近波长。',
+  trap:'把几何路程差当光程差；反射相位突变漏加 λ/2；把干涉与衍射公式混用。',
+  ext:'等厚干涉（牛顿环）、增透膜厚度、偏振与马吕斯定律。'},
+ {id:'k20',level:'高中',dom:'近代',name:'近代物理入门',
+  formulas:[['E = hν = hc/λ','光子能量'],['E_k = hν − W','爱因斯坦光电方程'],['ΔE = hν','能级跃迁'],['γ = 1/√(1−v²/c²)','狭义相对论因子']],
+  cond:'光强只影响光电子数目，不影响最大初动能；相对论效应在 v ≪ c 时可忽略。',
+  trap:'J 与 eV 单位混算；把遏止电压符号弄反；把经典速度叠加用于高速情形。',
+  ext:'康普顿散射定性、质能方程、时间膨胀与长度收缩（竞赛入门深度）。'}
+];
+
+const MODELS = [
+ {id:'m1',name:'斜面滑块（上滑—下滑—自锁）',level:'初中 → 高中',tags:['摩擦力换向','分段加速度','临界'],
+  signal:'题干出现倾角 θ、动摩擦因数 μ、上滑初速度或「能否自行下滑」。',
+  steps:['定正方向沿斜面向上，先画重力、支持力、摩擦力（方向由速度决定）。','上滑 a₁ = g(sinθ + μcosθ)；到最高点先判 tanθ 与 μ 的大小，决定能否下滑。','下滑 a₂ = g(sinθ − μcosθ)，注意摩擦力已反向。','用 v² = v₀² − 2a₁s 与 v′² = 2a₂s 串联；摩擦耗能 = μmgcosθ·(2s)。'],
+  eq:['a₁ = g(sinθ + μcosθ)','a₂ = g(sinθ − μcosθ)','v回 = v₀√[(sinθ−μcosθ)/(sinθ+μcosθ)]','tanθ ≤ μ ⇒ 静止自锁'],
+  traps:['来回使用同一个加速度','把静摩擦直接取 μN','忽略最高点处摩擦方向切换时的停顿判断'],
+  tactic:'先分段、后串接；摩擦耗能只和路程有关，和上滑下滑方向无关。',problems:['p5']},
+ {id:'m2',name:'传送带与相对滑动',level:'初中 → 高中',tags:['临界','分段','摩擦自调节'],
+  signal:'物体以初速度放上匀速（或加速）传送带，问到达另一端速度、时间、划痕长度。',
+  steps:['比较物块速度 v物 与带速 v带，确定摩擦力方向。','以「二者速度相等」为分界点分段；此前物块匀变速，此后随带匀速（若静摩擦够）。','划痕长度用相对位移 Δs = |∫(v物 − v带)dt|，不是物块对地位移。'],
+  eq:['a = μg（滑动段）','t₁ = |v带 − v₀|/(μg)','Δs相对 = |∫(v物−v带)dt|'],
+  traps:['把划痕当成物块位移','忘记速度相等后摩擦可突变为零（或反向）','传送带足够长/不够长两种情形未分类讨论'],
+  tactic:'画 v-t 图，两条速度线之间的面积就是相对位移。',problems:['p1']},
+ {id:'m3',name:'连接体与轻绳约束',level:'高中',tags:['约束','整体法'],
+  signal:'多个物体用轻绳、轻杆、滑轮连接，求共同加速度或内力。',
+  steps:['先整体法求共同加速度（避开内力）。','再隔离单个物体求绳张力。','由绳长不变写约束：沿绳方向速度/加速度分量相等；动滑轮注意 2 倍关系。'],
+  eq:['a = ΣF外 / Σm','a₁ = 2a₂（动滑轮类）','T = m(g − a) 或 m(g + a)'],
+  traps:['滑轮两侧加速度直接设相等','把绳张力当成处处相同（有质量绳/加速滑轮时不然）'],
+  tactic:'整体求 a、隔离求 T；列完方程先查量纲与极限（a→0 时 T→mg）。',problems:[]},
+ {id:'m4',name:'弹簧—碰撞—质心系',level:'高中',tags:['共速','能量暂存','质心系'],
+  signal:'两物体通过弹簧相互作用，问最大压缩量、最大弹性势能、分离速度。',
+  steps:['系统水平方向动量守恒 ⇒ 质心速度恒定 v_c = m₁v₀/(m₁+m₂)。','最大压缩 ⇔ 相对速度为零 ⇔ 两物体共速 = v_c。','E_p,max = 初始动能 − 共速动能 = ½μv相²，μ = m₁m₂/(m₁+m₂)。','弹簧恢复原长后按弹性碰撞公式给出末速度（质心系中速度反向）。'],
+  eq:['v_c = m₁v₀/(m₁+m₂)','E_p,max = ½·m₁m₂/(m₁+m₂)·v₀²','v₁′ = (m₁−m₂)/(m₁+m₂)·v₀'],
+  traps:['把共速当成能量损失（其实暂存于弹簧，会还回来）','在质心系算完忘记变换回实验室系'],
+  tactic:'凡是「弹簧最大/最短」，先写共速；凡是「弹簧原长」，写能量全还。',problems:['p6','p11']},
+ {id:'m5',name:'圆周运动临界（绳 / 杆 / 轨道）',level:'高中',tags:['临界','向心力'],
+  signal:'竖直平面内圆周运动、过最高点、不脱离轨道。',
+  steps:['最高点写径向方程：向心力由重力与约束力共同提供。','绳/内轨只能提供指向圆心的力 ⇒ 临界 T=0 ⇒ v_min = √(gR)。','杆/管道可提供双向力 ⇒ 临界 v_min = 0。','再用机械能守恒把最高点与最低点速度连起来。'],
+  eq:['mg + T = mv²/R','v_顶,min = √(gR)（绳）','v_底² = v_顶² + 4gR'],
+  traps:['把绳和杆模型混用','漏掉重力本身已提供部分向心力'],
+  tactic:'先判约束类型，再写临界；临界条件永远来自「约束力取极值」。',problems:[]},
+ {id:'m6',name:'抛体与阻力下的最值',level:'初中 → 高中',tags:['分解','包络线','数值'],
+  signal:'斜抛、平抛、射程最大角、打靶、有空气阻力。',
+  steps:['无阻力：分解为水平匀速、竖直匀变速，射程 R = v₀²sin2θ/g。','同高度起落时 45° 射程最大；有阻力或起落高度不同时最优角改变。','包络线（安全抛物线）y = v₀²/(2g) − gx²/(2v₀²) 用来判「能否打到」。','有阻力时用微分方程数值积分，勿再套解析公式。'],
+  eq:['R = v₀² sin2θ/g','H = v₀²sin²θ/(2g)','F阻 = −bv（线性阻力模型）'],
+  traps:['有阻力仍套 45° 最优','把落地时间当成上升时间的 2 倍（起落高度不同时不成立）'],
+  tactic:'先确认「起落是否等高、有无阻力」两个前提，再选公式。',problems:[]},
+ {id:'m7',name:'带电粒子在匀强磁场',level:'高中',tags:['洛伦兹力','几何','边界'],
+  signal:'粒子垂直（或斜向）射入 B 区，求半径、周期、偏转、出射点或最小磁场区域。',
+  steps:['洛伦兹力不做功 ⇒ 速率恒定，只改方向。','qv⊥B = mv⊥²/r ⇒ r = mv⊥/(qB)；T = 2πm/(qB) 与速率无关。','有平行分量时分解为圆周 + 匀速直线 ⇒ 螺旋线，螺距 = v∥T。','边界问题用「圆心在入射点速度垂线上」作几何约束。'],
+  eq:['r = mv/(qB)','T = 2πm/(qB)','ω = qB/m','螺距 h = 2πmv∥/(qB)'],
+  traps:['忘记 T 与 v 无关（回旋加速器原理）','斜入射时把 v 全部当作 v⊥','单位 cm / 10⁻⁷ s 换算出错'],
+  tactic:'先画圆心，再画半径；几何关系常比代数更快。',problems:['p8']},
+ {id:'m8',name:'电磁感应导轨（安培阻尼）',level:'高中',tags:['动量定理','指数衰减','能量'],
+  signal:'导体棒在有磁场的导轨上以初速度运动，接电阻 R / 电容 C / 双棒。',
+  steps:['写 ε = BLv ⇒ I = BLv/R ⇒ F安 = B²L²v/R，方向总与运动相反。','得到 dv/dt = −v/τ，τ = mR/(B²L²)，速度指数衰减。','用动量定理：−∫BIL dt = −BLq = m(v−v₀)，避开微分方程求 q。','再用 q = (BL/R)x 求总位移；能量守恒给 Q热 = ½mv₀²。'],
+  eq:['τ = mR/(B²L²)','q = mv₀/(BL)','x = qR/(BL) = mRv₀/(B²L²)','Q热 = ½mv₀²'],
+  traps:['把安培力当恒力用匀变速公式','认为棒真的会停下（渐近，但位移有限）','接电容或双杆时仍套单杆电阻公式'],
+  tactic:'「求位移先求电荷」是这一类题的固定桥梁。',problems:['p9']},
+ {id:'m9',name:'浮力—液面—体积守恒',level:'初中',tags:['整体法','差量法'],
+  signal:'漂浮物上加/减重物、冰块熔化、容器中液面升降。',
+  steps:['先写漂浮平衡 F浮 = G，把「变化」写成差量式。','加物不浸水时：ΔF浮 = G加物 ⇒ ΔV排 = G加物/(ρ液g)。','冰块熔化：比较熔化前 V排 与熔化后水的体积；纯冰 ⇒ 液面不变。','容器底压力变化用整体法：ΔF = ΔG系（注意是否溢出）。'],
+  eq:['F浮 = ρ液gV排','ΔV排 = Δm/ρ液','漂浮 V排/V物 = ρ物/ρ液'],
+  traps:['把 V物 当 V排','额外物体是否浸入水中未区分','冰块含杂质时仍断言液面不变'],
+  tactic:'优先用差量，避免重算整个系统的初始状态。',problems:['p2']},
+ {id:'m10',name:'等效电源与最大功率',level:'初中 → 高中',tags:['均值不等式','极值'],
+  signal:'滑动变阻器取何值时功率最大、动态电路、含内阻电源。',
+  steps:['把待求电阻 R 之外的部分等效为电动势 E、内阻 R₀（含电源内阻与定值电阻）。','写 P(R) = E²R/(R₀+R)²。','由 (R₀+R)² ≥ 4R₀R 得 P ≤ E²/(4R₀)，等号在 R = R₀。','注意区分「电源输出功率最大」与「某电阻自身功率最大」。'],
+  eq:['P = E²R/(R₀+R)²','R = R₀ 时 P_max = E²/(4R₀)','η = R/(R₀+R)'],
+  traps:['忽略电源内阻','把最大功率条件记成 R→0'],
+  tactic:'极值题先写出单变量函数，再找不等式或求导。',problems:['p3']},
+ {id:'m11',name:'气体循环与 p-V 图',level:'高中',tags:['分段吸热','面积法'],
+  signal:'给出 p-V 图上的循环，求净功、效率、吸放热。',
+  steps:['净功 = 循环曲线包围面积（顺时针为正）。','逐段判 ΔU（单原子 U = ³⁄₂pV）与 W（等压 pΔV，等容 0）。','由 Q = ΔU − W_外界对气体 判断每段吸/放热；只把 Q>0 的段计入 Q吸。','η = W净/Q吸；仅两热源可逆循环才可用卡诺公式。'],
+  eq:['W净 = ∮p dV','ΔU = ³⁄₂Δ(pV)（单原子）','η = W净/Q吸'],
+  traps:['把所有 Q>0 与 Q<0 段的绝对值都相加','矩形循环误套卡诺效率','符号约定前后不一致'],
+  tactic:'画一张四段表（ΔU / W / Q / 吸或放），一行一段，几乎不会错。',problems:['p10']},
+ {id:'m12',name:'力矩平衡与刚体释放',level:'初中 → 高中',tags:['力臂','转动惯量','能量'],
+  signal:'杠杆平衡、均匀杆绕端点释放、斜拉绳、支点约束力。',
+  steps:['静力：选转轴写 ΣM = 0，力臂是转轴到力作用线的垂直距离。','动力：用机械能守恒（重力取质心下降高度），配 J = ⅓mL²（细杆绕端）。','mg(L/2) = ½Jω² ⇒ ω = √(3g/L)；端点速度 v = ωL。','求支点约束力时再用质心运动定理，别直接套静力结果。'],
+  eq:['F·l = G·l_G','J_端 = ⅓mL²','ω = √(3g/L)','a_c = ³⁄₄g（水平释放瞬间质心加速度）'],
+  traps:['斜拉绳时力臂漏乘 sinθ','把细杆当质点用 J = mL²/12','漏掉均匀杆自重作用于中点'],
+  tactic:'静力用矩阵（力矩），动力用能量 + 转动惯量，两者别混。',problems:['p7','p13']}
+];
+
+const BASE_PROBLEMS = [
+ {id:'p1',level:'初中',dom:'力学',model:'m2',title:'往返奔跑的狗',
+  text:'甲、乙相距 100 m 相向而行，v甲 = 3 m/s，v乙 = 2 m/s。一只小狗以 8 m/s 在两人之间往返奔跑（转身时间忽略）。问两人相遇时狗共跑了多少米？',
+  hints:['狗的运动很乱，但有一个量是它和两人共享的：时间。','先求两人相遇时间 t = 100/(3+2)。','s狗 = v狗·t，不需要逐段求和。'],
+  answers:[{label:'狗跑的总路程',value:160,unit:'m',tol:0.01}],
+  solution:['两人相对速度 3+2 = 5 m/s，相遇时间 t = 100/5 = 20 s。','狗全程速率恒为 8 m/s，转向不耗时，故 s = 8×20 = 160 m。','若强行逐段求和，会得到收敛的无穷等比级数，结果相同 —— 竞赛要抓不变量。'],
+  trap:'逐段求和会陷入无穷级数；换参考系/抓共享时间是正解。'},
+ {id:'p2',level:'初中',dom:'力学',model:'m9',title:'木块上放铁块',
+  text:'体积 V = 100 cm³、密度 0.6×10³ kg/m³ 的木块漂浮在水面（ρ水 = 1.0×10³ kg/m³）。在木块上轻放一小铁块使木块恰好完全浸没，铁块不接触水。取 g = 10 N/kg，求铁块质量。',
+  hints:['整体受力平衡：总重力 = 浮力，用差量法最快。','初始漂浮 ⇒ V排 = (ρ木/ρ水)V = 60 cm³。','加铁块后 V排 = 100 cm³，浮力增量 = ρ水·g·ΔV排。'],
+  answers:[{label:'铁块质量',value:40,unit:'g',tol:0.01}],
+  solution:['初态：F浮 = G木 ⇒ V排,0 = 0.6V = 60 cm³。','末态：V排 = V = 100 cm³ ⇒ ΔV排 = 40 cm³ = 4×10⁻⁵ m³。','浮力增量 ΔF = ρ水 g ΔV排 = 1000×10×4×10⁻⁵ = 0.4 N。','铁块不入水，故 m铁 = ΔF/g = 0.04 kg = 40 g。'],
+  trap:'别漏掉木块自重；铁块不浸水就不贡献浮力。'},
+ {id:'p3',level:'初中',dom:'电磁',model:'m10',title:'可变电阻的最大功率',
+  text:'电动势 6 V 的理想电源（内阻忽略）与定值电阻 R₁ = 2 Ω 串联，再接可变电阻 R。求 R 取何值时其自身功率最大，以及该最大功率。',
+  hints:['写出单变量函数 P(R) = U²R/(R₁+R)²。','用 (R₁+R)² ≥ 4R₁R（均值不等式）。','等号成立条件 R = R₁；P_max = U²/(4R₁)。'],
+  answers:[{label:'R 取值',value:2,unit:'Ω',tol:0.01},{label:'最大功率',value:4.5,unit:'W',tol:0.01}],
+  solution:['I = U/(R₁+R) = 6/(2+R)，P_R = I²R = 36R/(2+R)²。','由 (2+R)² ≥ 8R 得 P_R ≤ 36/8 = 4.5 W，等号在 R = 2 Ω。','注意：R→0 时电源输出功率趋于最大，但 R 自身功率趋于 0，两者不同。'],
+  trap:'混淆「电源输出功率最大」与「某电阻自身功率最大」；含内阻时 R₀ = R₁ + r。'},
+ {id:'p4',level:'初中',dom:'光学',model:'m6',title:'水下点光源的亮圆',
+  text:'水面下 h = 1.2 m 处有一点光源，水折射率 n = 4/3，空气折射率取 1。求能透出水面的圆形区域半径与全反射临界角。',
+  hints:['由 n水·sinC = n空·sin90° 得 sinC = 1/n = 3/4。','边缘光线恰好以临界角入射，几何关系 r = h·tanC。','tanC = sinC/√(1−sin²C) = 3/√7。'],
+  answers:[{label:'临界角',value:48.59,unit:'°',tol:0.01},{label:'亮圆半径',value:1.36,unit:'m',tol:0.01}],
+  solution:['sinC = 1/n = 0.75 ⇒ C = arcsin0.75 ≈ 48.59°。','tanC = 0.75/√(1−0.75²) = 3/√7 ≈ 1.1339。','r = h tanC = 1.2×1.1339 ≈ 1.36 m。','更外侧的光线入射角 > C，发生全反射，无法出射。'],
+  trap:'把 sinC 当 tanC；把临界角公式写成 n sinC = 1 时应确认 n 是相对折射率。'},
+ {id:'p5',level:'高中',dom:'力学',model:'m1',title:'斜面上滑再下滑',
+  text:'m = 1 kg 的滑块以 v₀ = 6 m/s 沿倾角 θ = 30° 的斜面上滑，动摩擦因数 μ = √3/6 ≈ 0.2887，g = 10 m/s²。求上滑最大距离 s 与滑回出发点时的速度 v。',
+  hints:['上滑与下滑摩擦力方向相反 ⇒ 加速度不同，必须分段。','a₁ = g(sinθ + μcosθ) = 7.5 m/s²；a₂ = g(sinθ − μcosθ) = 2.5 m/s²。','s = v₀²/(2a₁)；v = √(2a₂s)。'],
+  answers:[{label:'上滑最大距离',value:2.4,unit:'m',tol:0.01},{label:'返回底端速度',value:3.4641,unit:'m/s',tol:0.01}],
+  solution:['上滑：a₁ = 10(0.5 + 0.25) = 7.5 m/s² ⇒ s = 36/15 = 2.4 m。','到最高点：tan30° ≈ 0.577 > μ ≈ 0.289，故能自行下滑。','下滑：a₂ = 10(0.5 − 0.25) = 2.5 m/s² ⇒ v = √(2×2.5×2.4) = √12 = 2√3 ≈ 3.46 m/s。','摩擦耗能 Wf = μmgcosθ·2s = 0.2887×10×0.866×4.8 ≈ 12 J；初动能 18 J − 末动能 6 J = 12 J，能量自洽。'],
+  trap:'来回用同一个加速度；漏判最高点能否下滑（tanθ ≤ μ 时会自锁静止）。'},
+ {id:'p6',level:'高中',dom:'力学',model:'m4',title:'弹簧最大压缩时的势能',
+  text:'光滑水平面上，m₁ = 2 kg 以 4 m/s 向右运动，m₂ = 3 kg 静止，m₂ 左端连一轻弹簧（两物体不粘连，作用过程弹性）。求弹簧压缩最大时两物体的共同速度与最大弹性势能。',
+  hints:['最大压缩 ⇔ 相对速度为零 ⇔ 两者共速，且共速 = 质心速度。','v_c = m₁v₀/(m₁+m₂) = 8/5。','E_p,max = 初始动能 − 共速动能 = ½μv₀²，μ = m₁m₂/(m₁+m₂)。'],
+  answers:[{label:'共同速度',value:1.6,unit:'m/s',tol:0.01},{label:'最大弹性势能',value:9.6,unit:'J',tol:0.01}],
+  solution:['系统水平动量守恒：v_c = 2×4/5 = 1.6 m/s。','初动能 K₀ = ½×2×16 = 16 J；共速动能 K_c = ½×5×1.6² = 6.4 J。','E_p,max = 16 − 6.4 = 9.6 J，恰等于 ½×1.2×16（约化质量 μ = 6/5 kg）。','弹簧恢复原长后能量全部归还，末速度为 v₁′ = −0.8 m/s、v₂′ = 3.2 m/s。'],
+  trap:'把「共速」当成完全非弹性碰撞结束；弹簧暂存能量，不是耗散。'},
+ {id:'p7',level:'高中',dom:'力学',model:'m12',title:'细杆绕端点释放',
+  text:'均匀细杆长 L = 1 m、质量 m = 2 kg，可绕一端 O 在竖直平面内无摩擦转动。杆从水平位置由静止释放，求转到竖直位置时的角速度 ω（g = 10 m/s²）。',
+  hints:['用机械能守恒：重力势能取质心下降 L/2。','绕端点转动惯量 J = ⅓mL²（不是绕质心的 ¹⁄₁₂mL²）。','mg(L/2) = ½Jω²。'],
+  answers:[{label:'角速度',value:5.4772,unit:'rad/s',tol:0.01}],
+  solution:['质心下降 h = L/2 = 0.5 m ⇒ 势能减少 mgL/2 = 2×10×0.5 = 10 J。','J = ⅓×2×1² = 2/3 kg·m²。','10 = ½×(2/3)ω² ⇒ ω² = 30 ⇒ ω = √30 ≈ 5.48 rad/s，端点线速度 v = ωL ≈ 5.48 m/s。'],
+  trap:'把细杆当质点（J 取 mL² 或 mL²/12）；把质心下降高度写成 L。'},
+ {id:'p8',level:'高中',dom:'电磁',model:'m7',title:'质子在匀强磁场中回旋',
+  text:'质子（m = 1.67×10⁻²⁷ kg，q = 1.6×10⁻¹⁹ C）以 v = 2×10⁶ m/s 垂直射入 B = 0.2 T 的匀强磁场。求轨道半径与回旋周期。',
+  hints:['洛伦兹力不做功 ⇒ 速率不变，做匀速圆周运动。','qvB = mv²/r ⇒ r = mv/(qB)。','T = 2πr/v = 2πm/(qB)，与速率无关。'],
+  answers:[{label:'轨道半径',value:10.44,unit:'cm',tol:0.01},{label:'回旋周期',value:3.279,unit:'10⁻⁷ s',tol:0.01}],
+  solution:['r = (1.67×10⁻²⁷×2×10⁶)/(1.6×10⁻¹⁹×0.2) = 0.1044 m = 10.4 cm。','T = 2π×1.67×10⁻²⁷/(1.6×10⁻¹⁹×0.2) = 3.28×10⁻⁷ s。','周期与 v 无关是回旋加速器的物理基础；半径才与 v 成正比。'],
+  trap:'单位混淆（m 与 cm、s 与 10⁻⁷ s）；斜入射时须用 v⊥ 求半径。'},
+ {id:'p9',level:'高中',dom:'电磁',model:'m8',title:'导轨上减速的导体棒',
+  text:'光滑水平平行导轨间距 L = 0.5 m，处于 B = 1 T 的竖直匀强磁场中，左端接 R = 2 Ω 电阻（导轨与棒电阻不计）。质量 m = 0.5 kg 的导体棒以 v₀ = 4 m/s 向右运动，只受安培力。求全过程中流过 R 的总电荷量 q、棒的总位移 x 以及电阻产生的焦耳热 Q。',
+  hints:['安培力 F = B²L²v/R 与速度成正比 ⇒ 不是匀变速，别用运动学公式。','动量定理：−∫BIL dt = −BLq = m(0−v₀) ⇒ q = mv₀/(BL)。','q = ∫I dt = (BL/R)∫v dt = BLx/R，故 x = qR/(BL)。','能量守恒：动能全部变成焦耳热，Q = ½mv₀²。'],
+  answers:[{label:'总电荷量',value:4,unit:'C',tol:0.01},{label:'总位移',value:16,unit:'m',tol:0.01},{label:'焦耳热',value:4,unit:'J',tol:0.01}],
+  solution:['ε = BLv，I = BLv/R，F安 = BIL = B²L²v/R，方向向左。','由 dv/dt = −v/τ（τ = mR/(B²L²) = 4 s）知 v = v₀e^{−t/τ}，速度渐近于零。','动量定理：−BLq = −mv₀ ⇒ q = 0.5×4/(1×0.5) = 4 C。','q = (BL/R)x ⇒ x = 4×2/(1×0.5) = 16 m；Q = ½×0.5×16 = 4 J。','校核：BLq = 1×0.5×4 = 2 N·s = mv₀ = 2 N·s ✓'],
+  trap:'把安培力当恒力；认为棒会真的停下（永不，但位移有限）；接电容/双杆时公式要重写。'},
+ {id:'p10',level:'高中',dom:'热学',model:'m11',title:'矩形循环的效率',
+  text:'1 mol 单原子理想气体经历循环：A(p₀,V₀) → B(2p₀,V₀) 等容 → C(2p₀,2V₀) 等压 → D(p₀,2V₀) 等容 → A 等压。求循环效率（百分数，保留一位小数）。',
+  hints:['净功 = p-V 图矩形面积 = (2p₀−p₀)(2V₀−V₀) = p₀V₀。','单原子 U = ³⁄₂pV；逐段算 ΔU 与 W，判断哪几段吸热。','A→B 等容吸热 ³⁄₂p₀V₀；B→C 等压吸热 ³⁄₂Δ(pV) + 2p₀V₀ = 5p₀V₀。','η = W净/Q吸 = 1/(1.5+5)。'],
+  answers:[{label:'循环效率',value:15.4,unit:'%',tol:0.02}],
+  solution:['W净 = p₀V₀（顺时针，热机）。','A→B：ΔU = ³⁄₂(2−1)p₀V₀ = 1.5p₀V₀，W = 0 ⇒ Q = +1.5p₀V₀。','B→C：ΔU = ³⁄₂(4−2)p₀V₀ = 3p₀V₀，气体对外做功 2p₀V₀ ⇒ Q = +5p₀V₀。','C→D 与 D→A 均放热，不计入 Q吸。故 Q吸 = 6.5p₀V₀，η = 1/6.5 ≈ 15.4%。'],
+  trap:'把所有放热段的绝对值也算进 Q吸；矩形循环不是卡诺循环，不能套 1−T_c/T_h。'},
+ {id:'p11',level:'高中',dom:'力学',model:'m4',title:'弹簧振子的能量',
+  text:'水平弹簧振子 k = 200 N/m、m = 0.5 kg、振幅 A = 0.1 m。求振动总能量 E 与最大速度 v_max。',
+  hints:['总能量只由 k 和 A 决定：E = ½kA²。','ω = √(k/m)。','最大速度出现在平衡位置：v_max = ωA。'],
+  answers:[{label:'总能量',value:1,unit:'J',tol:0.01},{label:'最大速度',value:2,unit:'m/s',tol:0.01}],
+  solution:['E = ½×200×0.1² = 1 J（与质量无关）。','ω = √(200/0.5) = 20 rad/s，T = 2π/20 ≈ 0.314 s。','v_max = ωA = 20×0.1 = 2 m/s；a_max = ω²A = 40 m/s²。'],
+  trap:'把 ½kA² 写成 kA²；把最大速度与最大加速度混淆。'},
+ {id:'p12',level:'高中',dom:'近代',model:'m6',title:'光电效应的最大初动能',
+  text:'波长 λ = 400 nm 的光照射逸出功 W = 2.0 eV 的金属。取 h = 6.63×10⁻³⁴ J·s、c = 3.0×10⁸ m/s、e = 1.6×10⁻¹⁹ C。求光电子最大初动能。',
+  hints:['光子能量 E = hc/λ，先把焦耳换成 eV。','爱因斯坦方程 E_k = hν − W。','1 eV = 1.6×10⁻¹⁹ J。'],
+  answers:[{label:'最大初动能',value:1.11,unit:'eV',tol:0.01}],
+  solution:['E = 6.63×10⁻³⁴×3×10⁸/(400×10⁻⁹) = 4.9725×10⁻¹⁹ J。','换算 eV：4.9725×10⁻¹⁹/1.6×10⁻¹⁹ ≈ 3.108 eV。','E_k = 3.108 − 2.0 = 1.108 ≈ 1.11 eV。'],
+  trap:'光强只影响光电子数目，不影响最大初动能；J 与 eV 不能混算。'},
+ {id:'p13',level:'初中',dom:'力学',model:'m12',title:'均匀杆的力矩平衡',
+  text:'一根重 10 N、长 1 m 的均匀轻杆（杆重不可忽略），一端用铰链固定在墙上保持水平，另一端由绳子拉住。求：(1) 绳竖直向上时的张力；(2) 绳与杆成 30° 斜向上时的张力。',
+  hints:['以铰链为转轴写力矩平衡，重力作用在杆中点。','竖直拉：T·L = G·(L/2)。','斜拉：只有垂直于杆的分量 T sin30° 产生力矩。'],
+  answers:[{label:'竖直拉时张力',value:5,unit:'N',tol:0.01},{label:'30° 斜拉时张力',value:10,unit:'N',tol:0.01}],
+  solution:['对铰链取矩：T·L·sinα = G·L/2。','α = 90°：T = G/2 = 5 N。','α = 30°：T = (G/2)/sin30° = 5/0.5 = 10 N。','铰链的水平分力随之增大；当 α→0 时张力趋于无穷，绳子无法保持水平。'],
+  trap:'斜拉时力臂漏乘 sinα；漏掉杆自重（它作用于中点）。'},
+ {id:'p14',level:'高中',dom:'力学',model:'m5',title:'第一宇宙速度',
+  text:'已知地球表面重力加速度 g = 10 m/s²、地球半径 R = 6.4×10⁶ m，忽略自转与大气。求第一宇宙速度（单位 km/s）。',
+  hints:['近地圆轨道：万有引力（≈mg）全部提供向心力。','mg = mv²/R。','v = √(gR)。'],
+  answers:[{label:'第一宇宙速度',value:8.0,unit:'km/s',tol:0.01}],
+  solution:['mg = mv²/R ⇒ v = √(gR) = √(10×6.4×10⁶) = √6.4×10⁷ = 8000 m/s = 8.0 km/s。','第二宇宙速度 v₂ = √2·v₁ ≈ 11.3 km/s。','若改用 g = 9.8 则 v ≈ 7.9 km/s，差异来自题设取值。'],
+  trap:'把第一宇宙速度当逃逸速度；用 g 与 GM/R² 两套数据混算。'}
+];
+
+const ROADMAP = [
+ {n:'STAGE 01',t:'筑基 · 初中竞赛',meta:'受力 / 守恒 / 几何直观',items:['把受力分析画成固定流程：重力→接触力→摩擦方向','s-t、v-t 图面积法与相对运动 3 组题','浮力差量法与液面变化专题','动态电路与最大功率（均值不等式入门）','几何光学：全反射临界角与光路可逆']},
+ {n:'STAGE 02',t:'建模 · 高中一轮',meta:'方程 / 约束 / 守恒量',items:['牛顿定律 + 连接体约束方程','动量、能量与质心系三套语言互译','简谐运动与单摆小角近似（含误差估计）','振动与波：驻波、多普勒','串并联→基尔霍夫→等效电源']},
+ {n:'STAGE 03',t:'进阶 · 竞赛专题',meta:'微元 / 刚体 / 场',items:['微元法：变力做功、质心、转动惯量','刚体转动与纯滚动','磁场边界与磁聚焦几何','电磁感应导轨：动量定理求位移','热力学循环四段表与效率','波动光学与光电效应']},
+ {n:'STAGE 04',t:'冲刺 · 真题与检验',meta:'限时 / 多解 / 自检',items:['限时套题，训练「先判模型再动笔」','同一题用能量法与动力学法对答案','每道题过量纲 + 极限 + 特值三道自检','错题清零：把错因归类到概念/建模/计算/审题']}
+];
+
+const CONSTANTS = [
+ ['真空光速 c','2.998×10⁸','m/s'],['万有引力常量 G','6.674×10⁻¹¹','N·m²/kg²'],
+ ['普朗克常量 h','6.626×10⁻³⁴','J·s'],['元电荷 e','1.602×10⁻¹⁹','C'],
+ ['电子质量 mₑ','9.109×10⁻³¹','kg'],['质子质量 mₚ','1.673×10⁻²⁷','kg'],
+ ['真空介电常数 ε₀','8.854×10⁻¹²','F/m'],['真空磁导率 μ₀','4π×10⁻⁷','H/m'],
+ ['静电力常量 k = 1/(4πε₀)','8.988×10⁹','N·m²/C²'],['普适气体常量 R','8.314','J/(mol·K)'],
+ ['阿伏伽德罗常数 N_A','6.022×10²³','mol⁻¹'],['标准重力加速度 g','9.80（竞赛常取 10）','m/s²'],
+ ['水密度 / 空气密度','1.00×10³ / 1.29','kg/m³'],['水的比热容','4.2×10³','J/(kg·℃)'],
+ ['1 eV','1.602×10⁻¹⁹','J'],['地球半径 / 质量','6.37×10⁶ / 5.97×10²⁴','m / kg'],
+ ['标准大气压','1.013×10⁵','Pa'],['冰的熔化热 / 水的汽化热','3.34×10⁵ / 2.26×10⁶','J/kg']
+];
+
+const CHECKLIST = [
+ '量纲检查：等式两边量纲是否一致？（本页量纲分析器）',
+ '极限检查：θ→0、μ→0、m→∞ 时结果是否退化到已知情形？',
+ '符号检查：摩擦/惯性力方向是否随速度方向切换？',
+ '条件检查：公式前提（小角度、惯性系、纯电阻、理想气体）是否满足？',
+ '守恒检查：动量守恒方向、能量去向（弹性暂存 vs 摩擦耗散）是否写全？',
+ '临界检查：共速、绳张力为零、恰好不滑、恰好全反射 —— 临界量取什么值？',
+ '单位检查：cm/m、eV/J、10⁻⁷ s 是否统一换算？',
+ '数量级检查：结果是否与常识（如 v₁ ≈ 8 km/s、g ≈ 10）相容？'
+];
+
+const APPROX = [
+ ['(1+x)ⁿ ≈ 1 + nx','|x| ≪ 1；保留一阶'],
+ ['sinθ ≈ θ − θ³/6','θ 用弧度；sinθ ≈ θ 误差 ~θ²/6'],
+ ['cosθ ≈ 1 − θ²/2','单摆小角近似必须用二阶项'],
+ ['单摆周期 T ≈ T₀(1 + θ₀²/16)','θ₀ = 60° 时真实周期比 T₀ 大约 7.3%'],
+ ['ln(1+x) ≈ x − x²/2','|x| ≪ 1'],
+ ['e^{−t/τ} ≈ 1 − t/τ','暂态与阻尼问题的短时间行为'],
+ ['1/(R+x)² 用均值不等式取极值','等效电源最大功率模型']
+];
+
+const INTEGRALS = [
+ ['W = ∫F(x)dx','变力做功；F-x 图面积'],
+ ['∫₀^R r²·(m/R)dr = ⅓mR²','均匀细杆绕端转动惯量（线密度 m/R）'],
+ ['x_c = ∫x dm / m','质心；对称体直接取几何中心'],
+ ['∫₀^∞ e^{−t/τ}dt = τ','导轨棒总位移 x = v₀τ = mRv₀/(B²L²)'],
+ ['∫v dt = x，∫a dt = Δv','运动学量的积分关系'],
+ ['∮p dV = 循环净功','p-V 图包围面积'],
+ ['∫I dt = q，∫I²R dt = Q热','电磁感应与焦耳热']
+];
+
+/* ---------------------------------------------------------------------
+   趣味思考题：反直觉 / 可动手 / 有争议就明说，绝不把「有名字」当成「已证实」
+   --------------------------------------------------------------------- */
+const BASE_WONDERS = [
+ {id:'w1',title:'天空为什么是蓝的，夕阳却是红的？',realm:'光学',level:'入门',topics:['k6','k19'],
+  hook:'很多人第一反应是「天空反射了海水的蓝」—— 可内陆、高原、飞机上，天空一样是蓝的。',
+  think:['如果阳光只是笔直穿过大气，我们为什么能从四面八方看见「亮着的天空」？','夕阳斜穿大气的路径比正午长十几倍，这会先筛掉哪种颜色？'],
+  reveal:'阳光里各色光都有，空气分子远小于可见光波长，发生瑞利散射：散射强度 ∝ 1/λ⁴。蓝光（约 450 nm）比红光（约 650 nm）被散射强约 (650/450)⁴ ≈ 4.3 倍。正午抬头看到的，是被大气「泼」向你的蓝光；日落时阳光斜穿更厚的大气，蓝光沿途被散射殆尽，剩下波长较长的红橙光直达眼睛。云是白色，因为水滴尺寸远大于波长，米氏散射对颜色几乎一视同仁。',
+  formula:'I散射 ∝ 1 / λ⁴',
+  tryIt:'玻璃杯装水，滴 2–3 滴牛奶摇匀，黑暗中用手电从侧面照：从垂直方向看水呈淡蓝，从光源方向透看偏黄红 —— 一杯「人造天空」。',
+  deeper:'同一套物理换个星球就换个结果：火星大气里是较大的尘埃，白天天空偏红橙，日落反而泛蓝。'},
+ {id:'w2',title:'雨滴从几千米高落下，为什么砸不伤人？',realm:'力学',level:'入门',topics:['k9','k1'],
+  hook:'直觉：落得越高速度越快，从两三千米掉下来该像子弹一样。',
+  think:['如果没有空气，雨滴会一直加速吗？','阻力随速度增大，会不会有一个「加不动了」的速度？'],
+  reveal:'空气阻力随速度增大（低速近似 ∝ v，高速近似 ∝ v²），当 mg = F阻 时加速度为零，速度停在「终端速度」。半径 1 mm 的雨滴质量约 4 mg，终端速度约 6–7 m/s；最大的雨滴也很少超过 9–10 m/s。动能约 10⁻⁴ J，比一粒被风吹起的沙子还温柔。反倒是真空里没有这个上限。',
+  formula:'v终 = √(2mg / (ρ C_d A))',
+  tryIt:'两张相同的咖啡滤纸，一张摊开、一张揉成团，同时放手；用手机慢动作拍下它们谁先落地。',
+  deeper:'雨滴并不是「眼泪形」：小雨滴近乎完美球形，大雨滴下落时底部被气流压扁，更像一个汉堡包。真空中羽毛与铁球同时落地，阿波罗 15 号在月球上真做过。'},
+ {id:'w3',title:'自行车骑起来才不倒，是「陀螺效应」吗？',realm:'力学',level:'进阶',topics:['k11','k9'],
+  hook:'最常见的解释是「车轮转起来像陀螺，所以不倒」。这个说法只对了一小部分。',
+  think:['推一辆没人骑的空车，它倾斜时前轮会自己转向哪边？','如果把前叉改成零拖曳距、甚至锁死转向，车还能自己稳住吗？'],
+  reveal:'车轮角动量（陀螺效应）确实贡献稳定，但主导因素是前叉后倾带来的拖曳距（trail）：车身一旦向一侧倾斜，前轮接地点相对转向轴的几何关系会自动让前轮朝倾斜侧偏转，车于是走一段曲线，向心加速度把重心「接」回来。骑车人还在不断做微小修正。研究者造出过抵消陀螺效应、却依然能自稳的自行车；也造出过前叉几何被破坏后推两步就倒的车。',
+  formula:'ΣM = dL/dt（陀螺项）+ 前轮拖曳距产生的回正力矩',
+  tryIt:'在空旷处轻推一辆自行车让它自己跑几米，蹲下来看前轮在车倾斜瞬间是否自动朝倾斜侧转。注意安全、别在车流附近试。',
+  deeper:'低速骑行时车轮角动量其实很小，但很多人仍能撒把骑一段 —— 稳定主要靠几何与反馈，不是「转得快就倒不了」。'},
+ {id:'w4',title:'一根绳子水平拉紧，中间挂个重物，为什么永远拉不直？',realm:'力学',level:'入门',topics:['k2','k12'],
+  hook:'直觉：只要力气够大，绳子总能被拉成一条水平直线吧？',
+  think:['绳子越接近水平，两侧的张力要多大才能提供同样的竖直支撑？','如果夹角正好是 0°，需要多大的张力？'],
+  reveal:'设绳与水平方向夹角 θ，竖直方向平衡要求 2T·sinθ = mg，于是 T = mg/(2sinθ)。θ → 0 时 T → ∞：想拉成绝对水平，需要无穷大的张力，绳子必先断。所以晾衣绳、高压线都必须留「弧垂」，这不是偷懒而是数学必然。',
+  formula:'T = mg / (2 sinθ)',
+  tryIt:'双手拉一根缝衣线，中间挂一串钥匙，试着把线拉到完全水平 —— 手感会立刻告诉你答案。',
+  deeper:'悬挂的绳/线缆形状并不是抛物线，而是悬链线 y = a·cosh(x/a)。高压输电线的弧垂就是按它算的。'},
+ {id:'w5',title:'水池为什么看起来比实际浅？鱼真的在你看到的位置吗？',realm:'光学',level:'入门',topics:['k6'],
+  hook:'直觉：眼睛不会骗人，看到多深就是多深。可下水后才发现踩不到底。',
+  think:['光从水进入空气时会向哪个方向偏折？','把折射光线反向延长，交点比真实物体更高还是更低？'],
+  reveal:'近轴近似下视深 ≈ 实深 / n，水 n ≈ 4/3，所以 1.2 m 深的池子看起来只有约 0.9 m。从岸上看鱼，鱼的虚像比真鱼更靠近水面；从水下看岸上的人，人反而显得更高。全反射还让水下的天空被压缩进一个半角 arcsin(1/n) ≈ 48.6° 的「斯涅尔窗口」。',
+  formula:'h视 ≈ h实 / n ；sin C = 1/n',
+  tryIt:'碗底放一枚硬币，后退到刚好看不见它，请人慢慢往碗里倒水 —— 硬币会「自己浮起来」。',
+  deeper:'从水下抬头，超出临界角看到的不是天空，而是水底的倒影：整片池底像一面镜子扣在头上。'},
+ {id:'w6',title:'猫总能四脚着地，这违反角动量守恒吗？',realm:'力学',level:'进阶',topics:['k11','k10'],
+  hook:'直觉：一开始角动量为零，空中又没有支点，怎么可能凭空把身体转过来？',
+  think:['如果身体前半段顺时针转、后半段逆时针转，总角动量是多少？','先收前爪、再收后爪，同一个动作分两步做，姿态会不会留下净变化？'],
+  reveal:'不违反。猫初始总角动量为零，靠「收前腿伸后腿 → 扭转前半身 → 交换姿态 → 扭转后半身」的分段形变，让身体两部分朝相反方向转，总角动量始终为零，但整体朝向改变了。这是经典的「落猫问题」，与几何相位有关；再加上翻正反射与落地时四肢缓冲。宇航员在失重环境中也能靠类似动作转身。',
+  formula:'L = Jω = 常量；L前 + L后 = 0，但姿态角可改变',
+  tryIt:'坐在可自由旋转的转椅上，双脚离地、双臂平举，先把手臂快速向左转再收回，观察身体是否留下一个反向转角。',
+  deeper:'网上流传的「猫从越高层摔下越安全」统计有争议，别当定论；物理上真正稳的结论是终端速度 + 姿态 + 缓冲。'},
+ {id:'w7',title:'飞机为什么能飞？「上表面路程长所以要跑更快」错在哪',realm:'流体',level:'进阶',topics:['k9','k10'],
+  hook:'流行解释：机翼上表面更弯、路程更长，两股空气必须同时到达后缘，所以上面流速更快、压强更小。',
+  think:['有什么理由要求上下两股空气「同时到达」？','如果机翼把空气整体往下推，根据动量守恒，机翼该受到什么方向的力？'],
+  reveal:'「等时到达」是错的，实测上表面气流确实更快，但原因是环量与边界条件，不是要赶时间。更本质的图像：机翼以一定迎角把大量空气向下偏转（下洗），空气获得向下动量，机翼按牛顿第三定律获得向上的反作用力；环量形式写成库塔–儒可夫斯基定理 L = ρvΓ。伯努利方程描述的是同一现象中的压强—速度关系，不是另一套独立成因。',
+  formula:'L = ρ v Γ ；F = dp/dt（下洗气流的动量变化率）',
+  tryIt:'捏住一张纸条一端，贴着上表面水平吹气，纸条会向上飘；把硬纸片斜着伸进风扇前，感受迎角带来的升力。',
+  deeper:'纸飞机没有上凸下平的翼型照样飞，特技飞机倒飞也靠迎角维持升力 —— 翼型是效率优化，不是升力的必要条件。'},
+ {id:'w8',title:'月亮总是同一张脸，它到底自转不转？',realm:'天体',level:'入门',topics:['k13','k11'],
+  hook:'直觉：既然永远看到同一面，它大概不自转。',
+  think:['拿一个球绕椅子走一圈，始终让同一面朝椅子，你自己转了吗？','如果月球自转比公转快一点，我们会看到什么？'],
+  reveal:'它自转，而且自转周期恰好等于公转周期（约 27.3 天）—— 这叫潮汐锁定。地球引力作用在月球的潮汐隆起上产生力矩，通过潮汐耗散长期把自转角速度「磨」到与公转同步。反过来，月球也在拖慢地球自转，日长每世纪大约增加 2 ms。',
+  formula:'T自转 = T公转 ≈ 27.3 d（同步自转）',
+  tryIt:'拿一个带标记的杯子绕台灯走一圈，始终让标记朝向台灯；走完你会发现杯子其实自转了整整一圈。',
+  deeper:'因为天平动（轨道偏心、倾角与视差），我们累计能看到月面约 59%，并不是严格的 50%。'},
+ {id:'w9',title:'「响水不开，开水不响」是真的吗？',realm:'热学',level:'入门',topics:['k7','k12'],
+  hook:'直觉：水越开越剧烈，声音应该越来越大。',
+  think:['噪声主要来自气泡「生成」还是「塌缩」？','水快开时，底部气泡上升到较冷的水层会发生什么？'],
+  reveal:'将开未开时，底部形成的气泡上升到上层较冷的水中急剧凝结塌缩（空化），大量小塌缩叠加成明显的「沙沙」噪声；真正沸腾后，气泡能一路升到水面才破裂，声音反而变得低沉、变小。所以老话有道理，但具体音色还受容器、加热方式与水质影响，不是精确定律。',
+  formula:'气泡内压 ≈ p外 + 2γ/R；温度低于沸点时气泡失稳塌缩',
+  tryIt:'烧水时用手机录一段音频，用频谱 App 看峰值频率与强度怎样随温度变化；对比「快开」与「大滚」两段。',
+  deeper:'同一类气泡动力学还解释了水管「水锤」、螺旋桨空蚀，以及敲击装水杯子时音调随水位变化。'},
+ {id:'w10',title:'如果地球突然停转，会发生什么？',realm:'天体',level:'脑洞',topics:['k13','k9'],
+  hook:'直觉：只是没有昼夜交替而已吧？毕竟我们平时感觉不到地球在动。',
+  think:['赤道上的人此刻正以多快的速度向东运动？','停转的瞬间，惯性会怎样处理这个速度？'],
+  reveal:'赤道线速度约 465 m/s（约 1670 km/h）。若地球瞬间停转，地表一切没被锚固的物体（包括大气与海水）会按惯性继续向东飞；大气惯性会造成远超台风的狂风，海水因离心效应消失而向两极重新分布。地球自转的转动动能约 2×10²⁹ J。请注意这是理想化思想实验 —— 真实地球不可能「突然」停转，能让它停下的过程本身早已把地表重塑。',
+  formula:'v赤道 = 2πR / T ≈ 465 m/s ；E转 = ½ I ω²',
+  tryIt:'在匀速直线行驶的车里轻轻竖直抛起一个小物件，看它是否落回手里 —— 你和它都「带着」车速，只是感觉不到。',
+  deeper:'傅科摆是地球自转最直观的证据：两极进动最快（约一个恒星日转一圈），赤道处几乎不进动，周期 ∝ 1/sinφ。'},
+ {id:'w11',title:'热水真的比冷水先结冰吗？',realm:'科学方法',level:'进阶',topics:['k7','k14'],
+  hook:'「姆潘巴效应」听起来很酷，但一个有名字的现象 ≠ 一个被确认的定律。',
+  think:['「先结冰」到底指出现第一块冰，还是整体降到 0℃？','蒸发、对流、过冷、容器结霜，哪些变量可能偷偷改变了比较条件？'],
+  reveal:'确实有历史观测与部分实验报告热水初温更高却先结冰，但它至今不是稳定的普适规律。候选机制包括：蒸发带走质量与汽化潜热、热水对流更强使温度分布更均匀、溶解气体与过冷程度不同、容器与冰箱搁架的接触/结霜差异。多次重复实验难以稳定复现，测量定义（初温、体积、结冰判据）对结论影响很大。这题真正的价值是：先确认现象是否稳定存在，再谈机制。',
+  formula:'Q = cmΔT + mL（蒸发项与相变项都不可忽略）',
+  tryIt:'用两个完全相同容器、等体积水、同一台冰箱、多个温度探头，重复 5 次；事先写死「结冰」的判据。看看你的数据支持还是不支持。',
+  deeper:'科学里最难的一步常常不是解释，而是先把「现象到底存不存在」钉死 —— 这也是竞赛实验题最看重的能力。'},
+ {id:'w12',title:'一枚硬币为什么能「装下」几十滴水？',realm:'热学',level:'入门',topics:['k3','k7'],
+  hook:'直觉：硬币那么小又没边沿，第一滴之后就该流下去。',
+  think:['水面能不能像一张绷紧的薄膜那样承受压强差？','洗洁精会改变什么？'],
+  reveal:'水的表面张力 γ ≈ 0.073 N/m，让液面像绷紧的弹性膜，弯曲液面两侧存在拉普拉斯压强差 Δp = 2γ/R。水在硬币上堆成凸起的「水冠」，曲率提供的压强差托住了它，直到重力超过这个能力才溢出。加一滴洗洁精，γ 大幅下降，水立刻流走。',
+  formula:'Δp = 2γ / R（球形液面）',
+  tryIt:'在硬币上逐滴滴水并计数，再用肥皂水重做一次；对比两者能hold住几滴。',
+  deeper:'水黾站在水面靠的也是它；树木把水送到上百米高的树冠，主流解释是蒸腾拉力 + 水分子内聚力的「内聚力—张力理论」。'}
+];
+
+/* ---------------------------------------------------------------------
+   内置题库 + 我的题库合并层：
+   AI/规则生成的卡片经人工核对后存 DB.custom，与内置内容合并渲染。
+   内置内容经过独立数值核验；自定义内容标记 custom:true，明确区分。
+   --------------------------------------------------------------------- */
+let PROBLEMS=[],WONDERS=[];
+function rebuildItems(){
+ const cp=(DB&&DB.custom&&Array.isArray(DB.custom.problems))?DB.custom.problems:[];
+ const cw=(DB&&DB.custom&&Array.isArray(DB.custom.wonders))?DB.custom.wonders:[];
+ PROBLEMS=BASE_PROBLEMS.concat(cp);
+ WONDERS=BASE_WONDERS.concat(cw);
+}
+
+/* =====================================================================
+   仿真层：所有运动由数值积分推进；解析解独立计算并并列显示，用于交叉校验。
+   ===================================================================== */
+const COL = {blue:'#2f56cc', orange:'#d97633', green:'#0d8266', red:'#c33c42', grey:'#8a95ad', pale:'#e3e9f3'};
+function frame(ctx,W,H){ctx.clearRect(0,0,W,H);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H)}
+function ticks(a,b,n){
+  const span=b-a; if(!(span>0)||!isFinite(span)) return [a];
+  const raw=span/n, mag=Math.pow(10,Math.floor(Math.log10(raw))), norm=raw/mag;
+  const st=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag, out=[];
+  for(let v=Math.ceil(a/st)*st;v<=b+st*1e-6;v+=st) out.push(Math.abs(v)<st*1e-9?0:v);
+  return out;
+}
+const fT=v=>Math.abs(v)>=1000||(Math.abs(v)<0.01&&v!==0)?v.toExponential(1):Number(v.toPrecision(3)).toString();
+function mapping(W,H,x0,x1,y0,y1,pad){const p=pad||44;return{p,X:v=>p+(v-x0)/((x1-x0)||1)*(W-2*p),Y:v=>H-p-(v-y0)/((y1-y0)||1)*(H-2*p)}}
+function gridAxes(ctx,W,H,x0,x1,y0,y1,pad,xlab,ylab){
+  const m=mapping(W,H,x0,x1,y0,y1,pad),p=m.p;
+  ctx.save();ctx.font='10.5px system-ui';ctx.fillStyle='#97a2b8';ctx.lineWidth=1;
+  ticks(x0,x1,5).forEach(v=>{const X=m.X(v);ctx.strokeStyle='#f0f3f9';ctx.beginPath();ctx.moveTo(X,p);ctx.lineTo(X,H-p);ctx.stroke();ctx.fillText(fT(v),X-8,H-p+15)});
+  ticks(y0,y1,4).forEach(v=>{const Y=m.Y(v);ctx.strokeStyle='#f0f3f9';ctx.beginPath();ctx.moveTo(p,Y);ctx.lineTo(W-p,Y);ctx.stroke();ctx.fillText(fT(v),6,Y+3)});
+  ctx.strokeStyle='#c8d2e6';ctx.beginPath();ctx.moveTo(p,p);ctx.lineTo(p,H-p);ctx.lineTo(W-p,H-p);ctx.stroke();
+  ctx.fillStyle='#6d7893';ctx.font='11px system-ui';
+  if(xlab)ctx.fillText(xlab,W-p-58,H-p+30);
+  if(ylab)ctx.fillText(ylab,8,p-14);
+  ctx.restore();return m;
+}
+function line(ctx,x1,y1,x2,y2,color,lw,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=lw||1.5;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function arrow(ctx,x1,y1,x2,y2,color,lw,head){
+  const a=Math.atan2(y2-y1,x2-x1),h=head||8;line(ctx,x1,y1,x2,y2,color,lw||2);
+  ctx.save();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(a-.42),y2-h*Math.sin(a-.42));ctx.lineTo(x2-h*Math.cos(a+.42),y2-h*Math.sin(a+.42));ctx.closePath();ctx.fill();ctx.restore();
+}
+function dot(ctx,x,y,r,color){ctx.save();ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore()}
+function label(ctx,t,x,y,color,size,align){ctx.save();ctx.fillStyle=color||'#4c5872';ctx.font=(size||11)+'px system-ui';ctx.textAlign=align||'left';ctx.fillText(t,x,y);ctx.restore()}
+function plot(ctx,B,series,x0,x1,y0,y1,xlab,ylab){
+  ctx.save();ctx.fillStyle='#fbfcff';ctx.fillRect(B.x,B.y,B.w,B.h);ctx.strokeStyle='#e8edf6';ctx.strokeRect(B.x,B.y,B.w,B.h);
+  const X=v=>B.x+6+(v-x0)/((x1-x0)||1)*(B.w-12),Y=v=>B.y+B.h-6-(v-y0)/((y1-y0)||1)*(B.h-12);
+  ctx.font='9.5px system-ui';ctx.fillStyle='#a2abc0';
+  ticks(y0,y1,3).forEach(v=>{line(ctx,B.x,Y(v),B.x+B.w,Y(v),'#f0f3f9',1);ctx.fillText(fT(v),B.x+3,Y(v)-2)});
+  ticks(x0,x1,4).forEach(v=>{line(ctx,X(v),B.y,X(v),B.y+B.h,'#f7f9fd',1)});
+  ctx.beginPath();ctx.rect(B.x,B.y,B.w,B.h);ctx.clip();
+  series.forEach(s=>{if(!s.pts||s.pts.length<2)return;ctx.beginPath();s.pts.forEach((q,i)=>i?ctx.lineTo(X(q[0]),Y(q[1])):ctx.moveTo(X(q[0]),Y(q[1])));ctx.strokeStyle=s.c;ctx.lineWidth=s.lw||1.7;if(s.dash)ctx.setLineDash(s.dash);ctx.stroke();ctx.setLineDash([])});
+  ctx.restore();if(xlab)label(ctx,xlab,B.x+B.w-56,B.y+B.h+12,'#8a95ad',10);if(ylab)label(ctx,ylab,B.x+2,B.y-5,'#8a95ad',10);
+}
+function bars(ctx,x,y,w,items,total){
+  const per=Math.min(26,(w/items.length)-6),gap=6;
+  ctx.save();ctx.font='10px system-ui';
+  items.forEach((it,i)=>{
+    const bx=x+i*(per+gap+56),h=44,frac=Math.max(0,Math.min(1,Math.abs(it.v)/((total||1)||1)));
+    ctx.fillStyle='#eef2f9';ctx.fillRect(bx,y,per,h);
+    ctx.fillStyle=it.c;ctx.fillRect(bx,y+h*(1-frac),per,h*frac);
+    ctx.fillStyle='#6d7893';ctx.fillText(it.n,bx,y+57);
+    ctx.fillStyle='#17223c';ctx.font='10px monospace';ctx.fillText(it.v.toFixed(2),bx,y+h+12);ctx.font='10px system-ui';
+  });ctx.restore();
+}
+function rk4(f,s,dt){
+  const add=(a,b,k)=>a.map((v,i)=>v+b[i]*k), k1=f(s),k2=f(add(s,k1,dt/2)),k3=f(add(s,k2,dt/2)),k4=f(add(s,k3,dt));
+  return s.map((v,i)=>v+dt*(k1[i]+2*k2[i]+2*k3[i]+k4[i])/6);
+}
+function agmK(k){let a=1,b=Math.sqrt(Math.max(0,1-k*k));for(let i=0;i<40;i++){const na=(a+b)/2,nb=Math.sqrt(a*b);a=na;b=nb}return Math.PI/(2*a)}
+function fmtNum(v,d){return (!isFinite(v))?'—':Number(v.toFixed(d===undefined?3:d)).toString()}
+
+const SIMS = [
+{
+ id:'proj',name:'抛体运动与空气阻力',brief:'线性阻力下的轨迹 / 45° 最优角的前提',rate:1,
+ legend:[{c:COL.blue,n:'数值积分轨迹'},{c:COL.grey,n:'无阻力解析解'},{c:COL.orange,n:'速度矢量'}],
+ note:'<b>物理要点：</b>无阻力且起落等高时 45° 射程最大；一旦加入阻力 F = −bv，最优角小于 45°。图中虚线始终是无阻力解析解，用来观察数值解偏离多少。落地判定用线性插值，避免时间步离散造成的射程误差。',
+ params:[{k:'v0',label:'初速度 v₀',min:5,max:40,step:1,val:20,unit:'m/s'},{k:'ang',label:'抛射角 θ',min:5,max:85,step:1,val:45,unit:'°'},{k:'g',label:'重力加速度 g',min:1,max:20,step:.1,val:9.8,unit:'m/s²'},{k:'drag',label:'线性阻力系数 β = b/m',min:0,max:.6,step:.01,val:0,unit:'s⁻¹'}],
+ init(p){const r=p.ang*Math.PI/180;return{t:0,x:0,y:0,vx:p.v0*Math.cos(r),vy:p.v0*Math.sin(r),trail:[[0,0]],apex:0,landed:false,range:null,tLand:null}},
+ step(dt,p,s){
+   if(s.landed)return;
+   const f=a=>[a[2],a[3],-p.drag*a[2],-p.g-p.drag*a[3]];
+   const cur=[s.x,s.y,s.vx,s.vy],nx=rk4(f,cur,dt);
+   if(nx[1]<=0&&cur[1]>0){const fr=cur[1]/(cur[1]-nx[1]);s.range=cur[0]+fr*(nx[0]-cur[0]);s.tLand=s.t+fr*dt;s.landed=true;s.x=s.range;s.y=0;s.vx=nx[2];s.vy=nx[3];}
+   else{s.x=nx[0];s.y=nx[1];s.vx=nx[2];s.vy=nx[3];s.t+=dt}
+   s.apex=Math.max(s.apex,s.y);s.trail.push([s.x,s.y]);if(s.trail.length>1400)s.trail.shift();
+ },
+ draw(ctx,W,H,s,p){
+   frame(ctx,W,H);const r=p.ang*Math.PI/180,T=2*p.v0*Math.sin(r)/p.g,Hh=p.v0*p.v0*Math.sin(r)**2/(2*p.g),R=p.v0*p.v0*Math.sin(2*r)/p.g;
+   const x1=Math.max(8,R*1.12,s.x*1.2)*1.02,y1=Math.max(4,Hh*1.35,s.apex*1.2)*1.05;
+   const m=gridAxes(ctx,W,H,0,x1,0,y1,48,'x / m','y / m');
+   const ana=[];for(let i=0;i<=120;i++){const t=T*i/120;ana.push([p.v0*Math.cos(r)*t,p.v0*Math.sin(r)*t-.5*p.g*t*t])}
+   ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle=COL.grey;ctx.lineWidth=1.6;ctx.beginPath();ana.forEach((q,i)=>i?ctx.lineTo(m.X(q[0]),m.Y(q[1])):ctx.moveTo(m.X(q[0]),m.Y(q[1])));ctx.stroke();ctx.restore();
+   ctx.save();ctx.strokeStyle=COL.blue;ctx.lineWidth=2.3;ctx.beginPath();s.trail.forEach((q,i)=>i?ctx.lineTo(m.X(q[0]),m.Y(q[1])):ctx.moveTo(m.X(q[0]),m.Y(q[1])));ctx.stroke();ctx.restore();
+   dot(ctx,m.X(s.x),m.Y(s.y),6,COL.blue);
+   const sc=Math.min(3.5,Math.max(.5,60/Math.max(1,p.v0)));
+   arrow(ctx,m.X(s.x),m.Y(s.y),m.X(s.x)+s.vx*sc,m.Y(s.y)-s.vy*sc,COL.orange,2);
+   line(ctx,m.X(0),m.Y(Hh),m.X(x1),m.Y(Hh),'#e6d4bd',1,[4,4]);label(ctx,'H = '+fmtNum(Hh,2)+' m',m.X(x1)-96,m.Y(Hh)-7,'#b98a54',10);
+   if(s.range!==null){line(ctx,m.X(s.range),m.Y(0),m.X(s.range),m.Y(0)+1,'#fff',1);}
+   label(ctx,'R解析 = '+fmtNum(R,2)+' m',m.X(x1)-150,H-58,COL.grey,11);
+ },
+ rows(s,p){
+   const r=p.ang*Math.PI/180,R=p.v0*p.v0*Math.sin(2*r)/p.g,Hh=p.v0*p.v0*Math.sin(r)**2/(2*p.g),T=2*p.v0*Math.sin(r)/p.g;
+   const dev=(s.range!==null&&p.drag===0)?Math.abs(s.range-R)/R*100:null;
+   return[['模拟时间 t',fmtNum(s.t,2)+' s'],['当前位置 (x, y)',fmtNum(s.x,2)+' , '+fmtNum(s.y,2)+' m'],['速率 |v|',fmtNum(Math.hypot(s.vx,s.vy),2)+' m/s'],
+    ['数值射程 R数值',s.range===null?'飞行中':fmtNum(s.range,3)+' m'],['解析射程 R = v₀²sin2θ/g',fmtNum(R,3)+' m'],['射程相对偏差',dev===null?'—':fmtNum(dev,3)+' %'],
+    ['数值最高点',fmtNum(s.apex,3)+' m'],['解析最高点',fmtNum(Hh,3)+' m'],['解析飞行时间',fmtNum(T,3)+' s'],['阻力系数 β',p.drag+' s⁻¹']];
+ }
+},
+{
+ id:'incline',name:'斜面滑块与自锁',brief:'摩擦力换向 / 分段加速度 / 能量残差',rate:1,
+ legend:[{c:COL.blue,n:'重力 mg'},{c:COL.green,n:'支持力 N'},{c:COL.orange,n:'摩擦力 f'}],
+ note:'<b>物理要点：</b>上滑 a₁ = g(sinθ+μcosθ)，下滑 a₂ = g(sinθ−μcosθ)。最高点必须先判 tanθ ≤ μ 是否自锁。能量残差 = (E₀−E)−W_f，理想情况下应趋近 0，它同时检验了积分与摩擦做功的正确性。本模型按同一系数处理静/动摩擦，是教学简化。',
+ params:[{k:'theta',label:'倾角 θ',min:5,max:60,step:1,val:30,unit:'°'},{k:'mu',label:'摩擦因数 μ',min:0,max:.8,step:.01,val:.29,unit:''},{k:'v0',label:'上滑初速度 v₀',min:0,max:12,step:.5,val:6,unit:'m/s'},{k:'m',label:'质量 m',min:.5,max:5,step:.1,val:1,unit:'kg'}],
+ init(p){return{t:0,s:0,v:p.v0,a:0,Wf:0,smax:0,back:null,stopped:false,phase:'上滑'}},
+ step(dt,p,s){
+   if(s.stopped)return;const th=p.theta*Math.PI/180,sn=Math.sin(th),cs=Math.cos(th),g=10,fr=p.mu*p.m*g*cs;
+   if(Math.abs(s.v)<1e-9){if(Math.tan(th)<=p.mu||s.s<=1e-9){s.v=0;s.a=0;s.stopped=true;s.phase='自锁静止';return}s.a=-g*(sn-p.mu*cs)}
+   else s.a=(s.v>0)?-g*(sn+p.mu*cs):-g*(sn-p.mu*cs);
+   let v2=s.v+s.a*dt;if(v2*s.v<0)v2=0;
+   const ds=.5*(s.v+v2)*dt;
+   s.s+=ds;s.Wf+=fr*Math.abs((s.v+v2)/2)*dt;s.t+=dt;s.v=v2;
+   if(v2===0)s.phase='转向点';else if(v2>0)s.phase='上滑';else s.phase='下滑';
+   if(s.s>s.smax)s.smax=s.s;
+   if(s.s<=0&&v2<0){s.back=Math.abs(v2);s.s=0;s.v=0;s.stopped=true;s.phase='回到底端'}
+ },
+ draw(ctx,W,H,s,p){
+   frame(ctx,W,H);const th=p.theta*Math.PI/180,g=10;
+   const Lpx=Math.min(W-190,(H-160)/Math.max(.25,Math.sin(th))),ox=90,oy=H-72;
+   const ex=ox+Lpx*Math.cos(th),ey=oy-Lpx*Math.sin(th);
+   line(ctx,ox,oy,ex,ey,'#8f9bb4',3);line(ctx,ox,oy,ex,oy,'#d6deec',2);
+   ctx.save();ctx.strokeStyle='#e7ecf6';ctx.setLineDash([3,4]);line(ctx,ex,oy,ex,ey,'#d6deec',1,[3,4]);ctx.restore();
+   label(ctx,'θ = '+p.theta+'°',ox+16,oy-8,'#6d7893',11);
+   const Lphy=Math.max(3,s.smax*1.3,p.v0*p.v0/(2*g*Math.sin(th))*1.2);
+   const u=Math.min(1,Math.max(0,s.s/Lphy)),bx=ox+u*Lpx*Math.cos(th),by=oy-u*Lpx*Math.sin(th);
+   ctx.save();ctx.translate(bx,by-14);ctx.rotate(-th);
+   ctx.fillStyle='#e9efff';ctx.strokeStyle=COL.blue;ctx.lineWidth=2;ctx.fillRect(-19,-15,38,30);ctx.strokeRect(-19,-15,38,30);
+   ctx.restore();
+   const px=bx,py=by-14;
+   arrow(ctx,px,py,px,py+62,COL.blue,2);label(ctx,'mg',px+7,py+56,COL.blue,11);
+   arrow(ctx,px,py,px-52*Math.sin(th),py-52*Math.cos(th),COL.green,2);label(ctx,'N',px-56*Math.sin(th)-14,py-54*Math.cos(th),COL.green,11);
+   const dir=s.v>0?-1:1;arrow(ctx,px,py,px+dir*52*Math.cos(th),py-dir*52*Math.sin(th),COL.orange,2);label(ctx,'f',px+dir*52*Math.cos(th)+5,py-dir*52*Math.sin(th),COL.orange,11);
+   const E0=.5*p.m*p.v0*p.v0,E=.5*p.m*s.v*s.v+p.m*g*s.s*Math.sin(th);
+   bars(ctx,W-330,H-118,300,[{n:'动能',v:.5*p.m*s.v*s.v,c:COL.blue},{n:'势能',v:p.m*g*s.s*Math.sin(th),c:COL.green},{n:'摩擦耗能',v:s.Wf,c:COL.orange}],Math.max(E0,.001));
+   label(ctx,'E₀ = '+fmtNum(E0,2)+' J',W-330,H-134,'#6d7893',11);
+   label(ctx,'阶段：'+s.phase,20,26,'#17223c',13);
+   label(ctx,'s = '+fmtNum(s.s,2)+' m   v = '+fmtNum(s.v,2)+' m/s',20,46,'#4c5872',11);
+ },
+ rows(s,p){
+   const th=p.theta*Math.PI/180,sn=Math.sin(th),cs=Math.cos(th),g=10;
+   const smax=p.v0*p.v0/(2*g*(sn+p.mu*cs)),lock=Math.tan(th)<=p.mu;
+   const vb=lock?0:p.v0*Math.sqrt(Math.max(0,(sn-p.mu*cs)/(sn+p.mu*cs)));
+   const E0=.5*p.m*p.v0*p.v0,E=.5*p.m*s.v*s.v+p.m*g*s.s*sn,res=(E0-E)-s.Wf;
+   return[['模拟时间 t',fmtNum(s.t,2)+' s'],['当前阶段',s.phase],['沿斜面位移 s',fmtNum(s.s,3)+' m'],['速度 v（上为正）',fmtNum(s.v,3)+' m/s'],
+    ['瞬时加速度 a',fmtNum(s.a,3)+' m/s²'],['上滑加速度 a₁',fmtNum(-g*(sn+p.mu*cs),3)+' m/s²'],['下滑加速度 a₂',fmtNum(-g*(sn-p.mu*cs),3)+' m/s²'],
+    ['数值最大位移',fmtNum(s.smax,3)+' m'],['解析最大位移',fmtNum(smax,3)+' m'],['数值返回速度',s.back===null?'—':fmtNum(s.back,3)+' m/s'],['解析返回速度',fmtNum(vb,3)+' m/s'],
+    ['自锁判据 tanθ ≤ μ',lock?'成立（不下滑）':'不成立'],['摩擦耗能 W_f',fmtNum(s.Wf,3)+' J'],['能量残差 (E₀−E)−W_f',fmtNum(res,4)+' J']];
+ }
+},
+{
+ id:'spring',name:'阻尼弹簧振子',brief:'RK4 积分 / 实测周期 / 能量流向',rate:.35,
+ legend:[{c:COL.blue,n:'数值 x(t)'},{c:COL.grey,n:'包络 ±Ae^(−βt)'},{c:COL.orange,n:'能量'}],
+ note:'<b>物理要点：</b>方程 mx″ + bx′ + kx = 0。欠阻尼时 ω_d = √(ω₀²−β²)，β = b/(2m)，振幅按 e^(−βt) 衰减。「实测周期」由数值解同向过零点测出，可与理论 T_d 对照 —— 这是检验积分精度的直接办法。播放速度已放慢 0.35×，读数中的 t 仍是真实物理时间。',
+ params:[{k:'k',label:'劲度系数 k',min:20,max:400,step:10,val:200,unit:'N/m'},{k:'m',label:'质量 m',min:.2,max:3,step:.1,val:.5,unit:'kg'},{k:'b',label:'阻尼系数 b',min:0,max:4,step:.1,val:.3,unit:'N·s/m'},{k:'A',label:'初始振幅 A',min:.02,max:.2,step:.01,val:.1,unit:'m'}],
+ init(p){return{t:0,x:p.A,v:0,hist:[[0,p.A]],lastCross:null,Tmeas:null,prevX:p.A,diss:0}},
+ step(dt,p,s){
+   const f=a=>[a[1],(-p.k*a[0]-p.b*a[1])/p.m];
+   const nx=rk4(f,[s.x,s.v],dt);
+   s.diss+=p.b*Math.pow((s.v+nx[1])/2,2)*dt;
+   if(s.prevX>0&&nx[0]<=0){const fr=s.prevX/(s.prevX-nx[0]);const tc=s.t+fr*dt;if(s.lastCross!==null)s.Tmeas=tc-s.lastCross;s.lastCross=tc}
+   s.prevX=nx[0];s.x=nx[0];s.v=nx[1];s.t+=dt;s.hist.push([s.t,s.x]);if(s.hist.length>1800)s.hist.shift();
+ },
+ draw(ctx,W,H,s,p){
+   frame(ctx,W,H);const w0=Math.sqrt(p.k/p.m),beta=p.b/(2*p.m),wd2=w0*w0-beta*beta,T0=2*Math.PI/w0;
+   const topH=Math.round(H*.42),cx=W*.5,eq=W*.5;
+   line(ctx,60,topH-30,60,topH+30,COL.grey,3);
+   const px=cx+s.x*460;
+   ctx.save();ctx.strokeStyle='#c3d0ee';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(60,topH);
+   const coils=14,L=Math.max(20,px-60-22);for(let i=0;i<=coils*2;i++){const xx=60+L*i/(coils*2),yy=topH+(i%2?11:-11);ctx.lineTo(xx,yy)}ctx.lineTo(px-20,topH);ctx.stroke();ctx.restore();
+   ctx.fillStyle='#e9efff';ctx.strokeStyle=COL.blue;ctx.lineWidth=2;ctx.fillRect(px-20,topH-24,40,48);ctx.strokeRect(px-20,topH-24,40,48);
+   line(ctx,eq,topH-44,eq,topH+48,'#dfe6f4',1,[4,4]);label(ctx,'平衡位置',eq+6,topH+60,'#8a95ad',10);
+   arrow(ctx,eq,topH+76,px,topH+76,COL.orange,2);label(ctx,'x = '+fmtNum(s.x,3)+' m',(eq+px)/2-30,topH+94,COL.orange,11);
+   const span=Math.max(1.2,3*T0),t1=Math.max(span,s.t),t0=t1-span;
+   const env=[];for(let i=0;i<=100;i++){const t=t0+(t1-t0)*i/100;env.push([t,p.A*Math.exp(-beta*t)])}
+   const env2=env.map(q=>[q[0],-q[1]]);
+   plot(ctx,{x:44,y:topH+112,w:W-88,h:H-topH-160},[{pts:env,c:'#d9c7b2',dash:[4,4]},{pts:env2,c:'#d9c7b2',dash:[4,4]},{pts:s.hist.filter(q=>q[0]>=t0),c:COL.blue}],t0,t1,-p.A*1.15,p.A*1.15,'t / s','x / m');
+   const E=.5*p.m*s.v*s.v+.5*p.k*s.x*s.x;
+   bars(ctx,W-250,20,230,[{n:'动能',v:.5*p.m*s.v*s.v,c:COL.blue},{n:'弹性势能',v:.5*p.k*s.x*s.x,c:COL.green},{n:'已耗散',v:s.diss,c:COL.orange}],Math.max(.5*p.k*p.A*p.A,.001));
+ },
+ rows(s,p){
+   const w0=Math.sqrt(p.k/p.m),beta=p.b/(2*p.m),wd2=w0*w0-beta*beta,T0=2*Math.PI/w0,Td=wd2>0?2*Math.PI/Math.sqrt(wd2):null;
+   const E=.5*p.m*s.v*s.v+.5*p.k*s.x*s.x;
+   return[['物理时间 t',fmtNum(s.t,2)+' s'],['位移 x',fmtNum(s.x,4)+' m'],['速度 v',fmtNum(s.v,4)+' m/s'],
+    ['无阻尼周期 T₀ = 2π√(m/k)',fmtNum(T0,4)+' s'],['阻尼周期 T_d',Td===null?'（过阻尼）':fmtNum(Td,4)+' s'],
+    ['数值实测周期',s.Tmeas===null?'等待过零':fmtNum(s.Tmeas,4)+' s'],
+    ['周期偏差（实测−T_d）',(Td===null||s.Tmeas===null)?'—':fmtNum((s.Tmeas-Td)/Td*100,3)+' %'],
+    ['阻尼率 β = b/(2m)',fmtNum(beta,4)+' s⁻¹'],['阻尼状态',wd2>0?'欠阻尼':'过阻尼 / 临界'],
+    ['当前机械能 E',fmtNum(E,4)+' J'],['累计耗散',fmtNum(s.diss,4)+' J'],
+    ['E + 耗散（应恒为 ½kA²）',fmtNum(E+s.diss,4)+' J'],['理论总能量 ½kA²',fmtNum(.5*p.k*p.A*p.A,4)+' J']];
+ }
+},
+{
+ id:'pend',name:'单摆：小角近似的误差',brief:'非线性方程 / 椭圆积分精确周期 / 实测周期',rate:1,
+ legend:[{c:COL.blue,n:'真实非线性解 θ(t)'},{c:COL.grey,n:'小角近似解 θ₀cos(ω₀t)'}],
+ note:'<b>物理要点：</b>θ″ + (g/L)sinθ = 0 是非线性方程。T₀ = 2π√(L/g) 只在 θ₀ ≪ 1 时成立；精确周期 T = 4√(L/g)·K(sin(θ₀/2))，K 由算术—几何平均（AGM）算出。θ₀ = 60° 时真实周期比 T₀ 约大 7.3%，一阶估计 θ₀²/16 ≈ 6.9%。加阻尼后精确周期公式不再严格适用。',
+ params:[{k:'L',label:'摆长 L',min:.2,max:3,step:.1,val:1,unit:'m'},{k:'ang0',label:'初始摆角 θ₀',min:5,max:170,step:1,val:60,unit:'°'},{k:'g',label:'重力加速度 g',min:1,max:20,step:.1,val:9.8,unit:'m/s²'},{k:'damp',label:'阻尼系数 γ',min:0,max:.5,step:.01,val:0,unit:'s⁻¹'}],
+ init(p){const a=p.ang0*Math.PI/180;return{t:0,th:a,w:0,hist:[[0,a,a]],prev:a,lastCross:null,Tmeas:null}},
+ step(dt,p,s){
+   const f=q=>[q[1],-(p.g/p.L)*Math.sin(q[0])-p.damp*q[1]];
+   const nx=rk4(f,[s.th,s.w],dt);
+   if(s.prev>0&&nx[0]<=0){const fr=s.prev/(s.prev-nx[0]),tc=s.t+fr*dt;if(s.lastCross!==null)s.Tmeas=tc-s.lastCross;s.lastCross=tc}
+   s.prev=nx[0];s.th=nx[0];s.w=nx[1];s.t+=dt;
+   const w0=Math.sqrt(p.g/p.L),a0=p.ang0*Math.PI/180,lin=a0*Math.exp(-p.damp*s.t/2)*Math.cos(w0*s.t);
+   s.hist.push([s.t,s.th,lin]);if(s.hist.length>1800)s.hist.shift();
+ },
+ draw(ctx,W,H,s,p){
+   frame(ctx,W,H);const cx=W*.42,py=34,Lpx=Math.min(185,H*.40),a0=p.ang0*Math.PI/180,w0=Math.sqrt(p.g/p.L);
+   const lin=a0*Math.exp(-p.damp*s.t/2)*Math.cos(w0*s.t);
+   line(ctx,cx,py,cx,py+Lpx+28,'#e2e8f4',1,[4,4]);
+   ctx.save();ctx.strokeStyle='#eef2f9';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(cx,py,Lpx,Math.PI/2-Math.abs(a0),Math.PI/2+Math.abs(a0));ctx.stroke();ctx.restore();
+   const bx=cx+Lpx*Math.sin(s.th),by=py+Lpx*Math.cos(s.th),gx=cx+Lpx*Math.sin(lin),gy=py+Lpx*Math.cos(lin);
+   line(ctx,cx,py,gx,gy,'#d3dcee',1.5,[5,4]);dot(ctx,gx,gy,7,'#ffffff');ctx.save();ctx.strokeStyle=COL.grey;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(gx,gy,7,0,7);ctx.stroke();ctx.restore();
+   line(ctx,cx,py,bx,by,'#8996b2',2);dot(ctx,bx,by,11,COL.blue);
+   label(ctx,'θ = '+fmtNum(s.th*180/Math.PI,1)+'°',cx+14,py+Lpx+16,COL.blue,12);
+   label(ctx,'θ₀ = '+p.ang0+'°',cx-46,py-10,'#6d7893',11);
+   label(ctx,'实线：真实解  ·  空心圈：小角近似',W-262,26,'#6d7893',11);
+   const span=Math.max(3,4*2*Math.PI/w0),t1=Math.max(span,s.t),t0=t1-span,lim=a0*1.25*180/Math.PI;
+   plot(ctx,{x:44,y:H*.62,w:W-88,h:H*.30},[{pts:s.hist.filter(q=>q[0]>=t0).map(q=>[q[0],q[2]*180/Math.PI]),c:COL.grey,dash:[5,4]},{pts:s.hist.filter(q=>q[0]>=t0).map(q=>[q[0],q[1]*180/Math.PI]),c:COL.blue}],t0,t1,-lim,lim,'t / s','θ / °');
+ },
+ rows(s,p){
+   const w0=Math.sqrt(p.g/p.L),T0=2*Math.PI/w0,a0=p.ang0*Math.PI/180,Tex=4*Math.sqrt(p.L/p.g)*agmK(Math.sin(a0/2));
+   return[['物理时间 t',fmtNum(s.t,2)+' s'],['当前摆角 θ',fmtNum(s.th*180/Math.PI,2)+' °'],['角速度 ω',fmtNum(s.w,3)+' rad/s'],
+    ['小角周期 T₀ = 2π√(L/g)',fmtNum(T0,4)+' s'],['精确周期（椭圆积分）',fmtNum(Tex,4)+' s'],
+    ['数值实测周期',s.Tmeas===null?'等待过零':fmtNum(s.Tmeas,4)+' s'],
+    ['真实周期比 T₀ 大',fmtNum((Tex/T0-1)*100,3)+' %'],['一阶估计 θ₀²/16',fmtNum(a0*a0/16*100,3)+' %'],
+    ['阻尼系数 γ',p.damp+' s⁻¹'],['说明',p.damp>0?'有阻尼时精确周期公式仅作参照':'无阻尼时实测周期应收敛到精确周期']];
+ }
+},
+{
+ id:'mag',name:'带电粒子在匀强磁场',brief:'回旋半径 / 螺旋线 / 洛伦兹力不做功',rate:1,
+ legend:[{c:COL.blue,n:'粒子轨迹'},{c:COL.orange,n:'速度 v'},{c:COL.green,n:'洛伦兹力（指向圆心）'}],
+ note:'<b>物理要点：</b>qv⊥B = mv⊥²/r ⇒ r = mv⊥/(qB)，T = 2πm/(qB) 与速率无关（回旋加速器原理）。v 有平行分量时轨迹为螺旋线。动画相位按可视化速率推进（真实周期可达 10⁻⁷ s 量级），但右侧读数全部是真实物理量；示意图半径已归一化，不代表真实长度比例。',
+ params:[{k:'v',label:'速率 v',min:.5,max:5,step:.1,val:2,unit:'×10⁶ m/s'},{k:'B',label:'磁感应强度 B',min:.05,max:1,step:.01,val:.2,unit:'T'},{k:'tilt',label:'与垂直 B 平面的夹角',min:0,max:80,step:1,val:0,unit:'°'},{type:'select',k:'particle',label:'粒子种类',options:[{v:'proton',n:'质子 p⁺'},{v:'electron',n:'电子 e⁻'},{v:'alpha',n:'α 粒子'}],val:'proton'}],
+ init(){return{phi:0,phis:[0],t:0}},
+ step(dt,p,s){s.phi+=dt*1.15;s.t+=dt;s.phis.push(s.phi);if(s.phis.length>900)s.phis.shift()},
+ draw(ctx,W,H,s,p){
+   frame(ctx,W,H);
+   const QM={proton:{qm:9.58e7,sgn:1,m:1.67e-27,q:1.6e-19,n:'质子 p⁺'},electron:{qm:1.76e11,sgn:-1,m:9.11e-31,q:1.6e-19,n:'电子 e⁻'},alpha:{qm:4.79e7,sgn:1,m:6.64e-27,q:3.2e-19,n:'α 粒子'}}[p.particle]||{qm:9.58e7,sgn:1,m:1.67e-27,q:1.6e-19,n:'质子 p⁺'};
+   const w=QM.qm*p.B,vSI=p.v*1e6,til=p.tilt*Math.PI/180,vp=vSI*Math.cos(til),vl=vSI*Math.sin(til);
+   const r=vp/w,T=2*Math.PI/w,pitch=vl*T,R=Math.min(W*.24,H*.30,125),dir=QM.sgn;
+   ctx.save();ctx.fillStyle='#eef3fd';for(let x=40;x<W-30;x+=42)for(let y=40;y<H-30;y+=42){ctx.beginPath();ctx.arc(x,y,1.6,0,7);ctx.fill()}
+   ctx.restore();
+   let pos,cx,cy,ax0,ay,pitchPx;
+   if(p.tilt===0){cx=W*.38;cy=H*.40;pos=ph=>[cx+R*Math.sin(ph),cy+dir*R*(1-Math.cos(ph))]}
+   else{cx=W*.16;cy=H*.52;ax0=W*.12;ay=H*.58;pitchPx=Math.min(W*.55,420);pos=ph=>[ax0+(ph/(2*Math.PI))*pitchPx+R*Math.sin(ph),ay+R*Math.cos(ph)*.30+dir*R*(1-Math.cos(ph))*.55]}
+   if(p.tilt===0){ctx.save();ctx.strokeStyle='#cddbf8';ctx.setLineDash([5,5]);ctx.beginPath();ctx.arc(cx,cy+dir*R,R,0,7);ctx.stroke();ctx.restore();dot(ctx,cx,cy+dir*R,3,COL.grey);label(ctx,'圆心',cx+6,cy+dir*R-6,COL.grey,10)}
+   else{line(ctx,ax0-30,ay,W-30,ay,'#b7c6e6',1.5,[6,4]);arrow(ctx,ax0-30,ay+26,ax0+70,ay+26,COL.green,1.8);label(ctx,'B 方向 / v∥',ax0-30,ay+44,COL.green,10)}
+   ctx.save();ctx.strokeStyle=COL.blue;ctx.lineWidth=2.4;ctx.beginPath();s.phis.forEach((ph,i)=>{const q=pos(ph);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])});ctx.stroke();ctx.restore();
+   const q0=pos(s.phi),qPrev=pos(Math.max(0,s.phi-.02));
+   const vx=q0[0]-qPrev[0],vy=q0[1]-qPrev[1],n=Math.hypot(vx,vy)||1;
+   dot(ctx,q0[0],q0[1],7,COL.blue);
+   arrow(ctx,q0[0],q0[1],q0[0]+vx/n*48,q0[1]+vy/n*48,COL.orange,2.2);
+   label(ctx,'v',q0[0]+vx/n*54,q0[1]+vy/n*54,COL.orange,11);
+   if(p.tilt===0){const ccx=cx,ccy=cy+dir*R,fx=ccx-q0[0],fy=ccy-q0[1],fn=Math.hypot(fx,fy)||1;arrow(ctx,q0[0],q0[1],q0[0]+fx/fn*42,q0[1]+fy/fn*42,COL.green,2);label(ctx,'F',q0[0]+fx/fn*48,q0[1]+fy/fn*48,COL.green,11)}
+   label(ctx,'B ⊙ 垂直纸面向外',W-186,26,'#6d7893',11);
+   label(ctx,'r = '+fmtNum(r,4)+' m（示意图按半径归一化）',20,H-16,'#6d7893',11);
+   label(ctx,'相位 φ = '+fmtNum(s.phi,2)+' rad',20,26,'#17223c',12);
+ },
+ rows(s,p){
+   const QM={proton:{qm:9.58e7,m:1.67e-27,q:1.6e-19},electron:{qm:1.76e11,m:9.11e-31,q:1.6e-19},alpha:{qm:4.79e7,m:6.64e-27,q:3.2e-19}}[p.particle]||{qm:9.58e7,m:1.67e-27,q:1.6e-19};
+   const w=QM.qm*p.B,vSI=p.v*1e6,til=p.tilt*Math.PI/180,vp=vSI*Math.cos(til),vl=vSI*Math.sin(til),r=vp/w,T=2*Math.PI/w,pitch=vl*T,E=.5*QM.m*vSI*vSI;
+   return[['回旋角频率 ω = qB/m',w.toExponential(3)+' rad/s'],['回旋半径 r = mv⊥/(qB)',fmtNum(r,5)+' m = '+fmtNum(r*100,2)+' cm'],
+    ['回旋周期 T = 2πm/(qB)',T.toExponential(3)+' s'],['垂直分量 v⊥',vSI.toExponential(3)+' m/s'],['平行分量 v∥',vl.toExponential(3)+' m/s'],
+    ['螺距 h = v∥T',fmtNum(pitch,5)+' m'],['动能（恒定）',E.toExponential(3)+' J'],['动画相位 φ',fmtNum(s.phi,2)+' rad'],
+    ['洛伦兹力做功','恒为 0（F ⊥ v）'],['轨迹类型',p.tilt===0?'匀速圆周':'螺旋线']];
+ }
+},
+{
+ id:'rail',name:'电磁感应导轨',brief:'安培阻尼 / 动量定理求位移 / 焦耳热',rate:1,
+ legend:[{c:COL.blue,n:'数值 v(t)'},{c:COL.grey,n:'解析 v₀e^(−t/τ)'},{c:COL.orange,n:'动能→焦耳热'}],
+ note:'<b>物理要点：</b>ε = BLv ⇒ I = BLv/R ⇒ F安 = B²L²v/R，故 dv/dt = −v/τ（τ = mR/B²L²）。由动量定理 −BLq = m(v−v₀) 与 q = BLx/R 可绕过微分方程求总位移与总电荷。速度按指数渐近于零、理论上永不停止，但总位移有限 x∞ = v₀τ。本实验用精确指数步推进，数值解与解析解差异应接近机器精度。',
+ params:[{k:'B',label:'磁感应强度 B',min:.2,max:2,step:.1,val:1,unit:'T'},{k:'L',label:'导轨间距 L',min:.2,max:1,step:.05,val:.5,unit:'m'},{k:'R',label:'电阻 R',min:.5,max:5,step:.5,val:2,unit:'Ω'},{k:'m',label:'导体棒质量 m',min:.2,max:2,step:.1,val:.5,unit:'kg'},{k:'v0',label:'初速度 v₀',min:1,max:10,step:.5,val:4,unit:'m/s'}],
+ init(p){return{t:0,v:p.v0,x:0,q:0,Q:0,hist:[[0,p.v0]]}},
+ step(dt,p,s){
+   const tau=p.m*p.R/(p.B*p.B*p.L*p.L),v2=s.v*Math.exp(-dt/tau),dx=(s.v-v2)*tau;
+   s.x+=dx;s.q+=(p.B*p.L/p.R)*dx;s.Q+=.5*p.m*(s.v*s.v-v2*v2);s.v=v2;s.t+=dt;
+   s.hist.push([s.t,s.v]);if(s.hist.length>1600)s.hist.shift();
+ },
+ draw(ctx,W,H,s,p){
+   frame(ctx,W,H);const tau=p.m*p.R/(p.B*p.B*p.L*p.L),xinf=p.v0*tau;
+   const yT=H*.16,yB=H*.38,x0=70,x1=W-70;
+   ctx.save();ctx.fillStyle='#dfe8fa';for(let x=x0+14;x<x1;x+=34)for(let y=yT+16;y<yB;y+=32){ctx.beginPath();ctx.arc(x,y,1.5,0,7);ctx.fill()}ctx.restore();
+   label(ctx,'B ⊙ 匀强磁场',x0+4,yT-12,'#6d7893',11);
+   line(ctx,x0,yT,x1,yT,'#8f9bb4',3);line(ctx,x0,yB,x1,yB,'#8f9bb4',3);
+   line(ctx,x0,yT,x0,yB,'#8f9bb4',3);
+   const rodX=x0+Math.min(1,s.x/(xinf||1))*(x1-x0-30);
+   line(ctx,rodX,yT,rodX,yB,COL.blue,6);
+   label(ctx,'导体棒',rodX-22,yB+18,COL.blue,11);
+   arrow(ctx,rodX+16,(yT+yB)/2-16,rodX+58,(yT+yB)/2-16,COL.orange,2);label(ctx,'v',rodX+62,(yT+yB)/2-12,COL.orange,11);
+   const I=p.B*p.L*s.v/p.R;
+   label(ctx,'I = '+fmtNum(I,3)+' A',x1-130,yB+18,COL.green,11);
+   const span=Math.max(4,4*tau),t1=Math.max(span,s.t),t0=t1-span,va=[];
+   for(let i=0;i<=120;i++){const t=t0+(t1-t0)*i/120;va.push([t,p.v0*Math.exp(-t/tau)])}
+   plot(ctx,{x:44,y:H*.48,w:W-88,h:H*.28},[{pts:va,c:COL.grey,dash:[5,4]},{pts:s.hist.filter(q=>q[0]>=t0),c:COL.blue}],t0,t1,0,p.v0*1.08,'t / s','v / (m/s)');
+   bars(ctx,W-270,H-112,250,[{n:'动能',v:.5*p.m*s.v*s.v,c:COL.blue},{n:'焦耳热',v:s.Q,c:COL.orange}],Math.max(.5*p.m*p.v0*p.v0,.001));
+ },
+ rows(s,p){
+   const tau=p.m*p.R/(p.B*p.B*p.L*p.L),xinf=p.v0*tau,qinf=p.m*p.v0/(p.B*p.L),Qinf=.5*p.m*p.v0*p.v0;
+   const vAna=p.v0*Math.exp(-s.t/tau),I=p.B*p.L*s.v/p.R,Ek=.5*p.m*s.v*s.v;
+   return[['物理时间 t',fmtNum(s.t,2)+' s'],['数值速度 v',fmtNum(s.v,6)+' m/s'],['解析速度 v₀e^(−t/τ)',fmtNum(vAna,6)+' m/s'],
+    ['速度相对偏差',fmtNum(Math.abs(s.v-vAna)/Math.max(1e-12,p.v0)*100,6)+' %'],['时间常数 τ = mR/(B²L²)',fmtNum(tau,3)+' s'],
+    ['瞬时电流 I',fmtNum(I,4)+' A'],['数值位移 x',fmtNum(s.x,4)+' m'],['解析总位移 x∞ = v₀τ',fmtNum(xinf,4)+' m'],
+    ['数值电荷量 q',fmtNum(s.q,4)+' C'],['解析电荷量 mv₀/(BL)',fmtNum(qinf,4)+' C'],
+    ['数值焦耳热 Q',fmtNum(s.Q,4)+' J'],['解析焦耳热 ½mv₀²',fmtNum(Qinf,4)+' J'],
+    ['动量校核 BLq',fmtNum(p.B*p.L*s.q,4)+' N·s'],['动量校核 m(v₀−v)',fmtNum(p.m*(p.v0-s.v),4)+' N·s'],
+    ['能量残差 Ek+Q−½mv₀²',fmtNum(Ek+s.Q-Qinf,8)+' J']];
+ }
+}
+];
+/* =====================================================================
+   应用层：界面渲染、状态持久化、量纲分析器、训练闭环
+   ===================================================================== */
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const DAY=86400000;
+
+const KEY='physlab.v1',UIDKEY='physlab.uid';
+const DEFAULTS=()=>({plan:{},progress:{},attempts:[],wrong:{},days:[],taskOffset:0,updatedAt:0,wonder:{revealed:{},notes:{},fav:{}},custom:{problems:[],wonders:[]},ai:{msgs:[]}});
+function normalize(o){const d=DEFAULTS(),m=Object.assign(d,(o&&typeof o==='object')?o:{});
+ m.wonder=Object.assign({revealed:{},notes:{},fav:{}},(o&&o.wonder&&typeof o.wonder==='object')?o.wonder:{});
+ for(const k of ['revealed','notes','fav'])if(!m.wonder[k]||typeof m.wonder[k]!=='object')m.wonder[k]={};
+ m.custom=Object.assign({problems:[],wonders:[]},(o&&o.custom&&typeof o.custom==='object')?o.custom:{});
+ if(!Array.isArray(m.custom.problems))m.custom.problems=[];
+ if(!Array.isArray(m.custom.wonders))m.custom.wonders=[];
+ m.ai=Object.assign({msgs:[]},(o&&o.ai&&typeof o.ai==='object')?o.ai:{});
+ if(!Array.isArray(m.ai.msgs))m.ai.msgs=[];
+ return m}
+let DB;
+try{const raw=localStorage.getItem(KEY);DB=raw?normalize(JSON.parse(raw)):DEFAULTS()}catch(e){DB=DEFAULTS()}
+rebuildItems();
+
+/* ---------- 轻量后端同步层 ----------
+   服务端在线：学习数据写入 data/store.json，猜想墙跨浏览器共享。
+   服务端离线：自动降级为 localStorage，界面明确标注「仅本机缓存」，绝不假装已同步。 */
+const API_BASE=(typeof window!=='undefined'&&window.PHYS_API_BASE?String(window.PHYS_API_BASE):'').replace(/\/$/,'');
+const SYNC={online:false,uid:'',timer:null,ideas:[]};
+function getUid(){let u=null;try{u=localStorage.getItem(UIDKEY)}catch(e){}if(!u){u='u_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);try{localStorage.setItem(UIDKEY,u)}catch(e){}}return u}
+SYNC.uid=getUid();
+function api(p,opt){return fetch(API_BASE+p,Object.assign({headers:{'Content-Type':'application/json'}},opt)).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+function withTimeout(pr,ms){return Promise.race([pr,new Promise((_,rj)=>setTimeout(()=>rj(new Error('连接超时')),ms))])}
+function setSync(status,msg){
+ const pill=$('#pillSync'),side=$('#sideStatus');if(!pill||!side)return;
+ if(status==='ok'){pill.innerHTML='服务端 <b>已同步</b>';side.innerHTML='<b>后端已连接</b> · 学习数据写入服务端<br>data/store.json · 猜想墙可共享'}
+ else if(status==='busy'){pill.innerHTML='正在连接服务端…';side.innerHTML='<b>正在检测后端…</b><br>若服务未启动会自动降级'}
+ else if(status==='error'){pill.innerHTML='<span style="color:var(--err)">同步失败 · 点此重试</span>';side.innerHTML='<b>同步失败</b> · 本机仍可正常使用<br>'+esc(msg||'')}
+ else{pill.innerHTML='<span style="color:var(--warn)">仅本机缓存 · 点此重试</span>';side.innerHTML='<b>后端未连接</b> · 数据暂存本机<br><code>poetry run python app.py</code> 后重试'}
+ pill.title=msg?msg:'点击重新连接后端服务';
+}
+function save(){
+ DB.updatedAt=Date.now();
+ try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){}
+ clearTimeout(SYNC.timer);SYNC.timer=setTimeout(pushState,650);
+}
+async function pushState(){
+ if(!SYNC.online)return;
+ try{await api('/api/state?uid='+encodeURIComponent(SYNC.uid),{method:'PUT',body:JSON.stringify({state:DB,updatedAt:DB.updatedAt})});setSync('ok')}
+ catch(e){setSync('error',e.message)}
+}
+async function loadIdeas(){
+ if(!SYNC.online)return;
+ try{const r=await api('/api/ideas');SYNC.ideas=Array.isArray(r.items)?r.items:[];if(VIEW==='wonder')renderIdeaWall()}catch(e){}
+}
+async function postIdea(wid,text){
+ if(!SYNC.online)return{ok:false,msg:'未连接后端服务，猜想只保存在本机。启动 node server.js 后可分享。'};
+ try{const r=await api('/api/ideas',{method:'POST',body:JSON.stringify({wid,text,uid:SYNC.uid})});if(!r.ok)throw new Error(r.error||'发布失败');await loadIdeas();return{ok:true}}
+ catch(e){return{ok:false,msg:'发布失败：'+e.message}}
+}
+async function bootSync(){
+ setSync('busy');
+ try{
+  const h=await withTimeout(api('/api/health'),2200);if(!h.ok)throw new Error('服务返回异常');
+  SYNC.online=true;
+  const r=await api('/api/state?uid='+encodeURIComponent(SYNC.uid));
+  if(r.state&&typeof r.state==='object'){
+   const remote=normalize(r.state),rt=Number(r.updatedAt)||0,lt=Number(DB.updatedAt)||0;
+   if(rt>lt){DB=remote;rebuildItems();try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){}}
+  }
+  await pushState();await loadIdeas();setSync('ok');go(VIEW);
+ }catch(e){SYNC.online=false;setSync('offline',e.message)}
+}
+$('#pillSync').addEventListener('click',()=>bootSync());
+function markToday(){const d=todayStr();if(!DB.days.includes(d)){DB.days.push(d);DB.days.sort();save()}}
+function streak(){if(!DB.days.length)return 0;const set=new Set(DB.days);let d=new Date(),n=0;if(!set.has(todayStr()))d.setDate(d.getDate()-1);for(;;){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(!set.has(k))break;n++;d.setDate(d.getDate()-1)}return n}
+const answered=()=>DB.attempts.filter(a=>a.mode==='answer');
+function accByDom(){const o={};DOMAINS.forEach(d=>o[d]={n:0,ok:0});answered().forEach(a=>{const p=PROBLEMS.find(q=>q.id===a.pid);if(!p||!(p.dom in o))return;o[p.dom].n++;if(a.correct)o[p.dom].ok++});return o}
+function dueList(){const now=Date.now();return Object.entries(DB.wrong).filter(([,v])=>v.due<=now).map(([k])=>k)}
+function topbar(){const a=answered(),ok=a.filter(x=>x.correct).length;$('#pillStat').innerHTML='已练 <b>'+a.length+'</b> 题 · 正确率 <b>'+(a.length?Math.round(ok/a.length*100):0)+'%</b>';$('#pillStreak').innerHTML='连续学习 <b>'+streak()+'</b> 天';const n=dueList().length,b=$('#navBadge');b.textContent=n;b.style.display=n?'inline-block':'none'}
+
+const DOMAINS=['力学','电磁','热学','光学','近代','方法'];
+const LEVELS=['全部','初中','高中'];
+const META={
+ dashboard:['学习总览','把知识点、模型、仿真和错题串成一条闭环'],
+ graph:['知识图谱','公式必须连着适用条件一起记'],
+ models:['物理模型库','识别信号 → 建模步骤 → 关键方程 → 陷阱'],
+ wonder:['奇思妙想','先猜一猜，再揭晓，回家动手试'],
+ ai:['AI 助手','想法和题目发给 AI，整理成卡片入库'],
+ lab:['交互仿真室','数值积分实时推进，解析解并列校验'],
+ practice:['分级训练场','先提示、再作答、后解析'],
+ wrong:['错题与间隔复习','1 → 3 → 7 → 15 → 30 天'],
+ toolbox:['解题工具箱','量纲 → 极限 → 特值，三道自检'],
+ about:['设计说明','产品结构、后端接口、质量门与已知边界']
+};
+let VIEW='dashboard';
+const F={level:'全部',dom:'全部',topicQ:'',pracLevel:'全部',wonderRealm:'全部',openTopics:new Set(),openModels:new Set()};
+function go(v){
+ VIEW=v;
+ try{if(location.hash!=='#'+v)history.replaceState(null,'','#'+v)}catch(e){}
+ $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+ $$('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
+ $('#crumb').innerHTML=META[v][0]+' <span>'+META[v][1]+'</span>';
+ ({dashboard:renderDashboard,graph:renderGraph,models:renderModels,wonder:renderWonder,ai:renderAI,lab:renderLab,practice:renderPractice,wrong:renderWrong,toolbox:renderToolbox,about:renderAbout})[v]();
+ topbar();window.scrollTo({top:0,behavior:'smooth'});
+}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-view]');if(b)go(b.dataset.view)});
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace(/^#/,'');if(META[v]&&v!==VIEW)go(v)});
+
+/* ---------------- 总览 ---------------- */
+function statCard(lab,num,foot,color){return '<div class="card stat"><div class="stripe" style="background:'+color+'"></div><div class="lab">'+lab+'</div><div class="num" style="color:'+color+'">'+num+'</div><div class="foot">'+foot+'</div></div>'}
+function renderDashboard(){
+ const a=answered(),ok=a.filter(x=>x.correct).length,mastered=Object.keys(DB.progress).filter(k=>DB.progress[k]).length;
+ $('#statCards').innerHTML=[
+  statCard('累计作答',a.length,'只统计提交答案，不含查看解析','#2f56cc'),
+  statCard('总正确率',(a.length?Math.round(ok/a.length*100):0)+'%',a.length?'错因可在错题本查看':'先去训练场做一题','#0d8266'),
+  statCard('待复习错题',dueList().length,'按间隔复习队列到期','#d97633'),
+  statCard('已标记掌握',mastered+' / '+TOPICS.length,'知识图谱中可勾选','#5b7ee8')
+ ].join('');
+ renderRadar();renderTasks();renderRoadmap();renderDailyWonder();
+ $('#btnGoPractice').onclick=()=>go('practice');
+ $('#btnGoLab').onclick=()=>go('lab');
+ $('#btnRefreshTask').onclick=()=>{DB.taskOffset=(DB.taskOffset||0)+1;save();renderTasks()};
+}
+function renderRadar(){
+ const cx=170,cy=142,R=98,n=DOMAINS.length,ang=i=>-Math.PI/2+i*2*Math.PI/n;
+ const acc=accByDom(),vals=DOMAINS.map(d=>acc[d].n?Math.max(.06,acc[d].ok/acc[d].n):.06);
+ let s='<svg viewBox="0 0 340 290" style="width:100%;max-width:340px;display:block;margin:auto">';
+ [.25,.5,.75,1].forEach(f=>{const pts=Array.from({length:n},(_,i)=>[cx+R*f*Math.cos(ang(i)),cy+R*f*Math.sin(ang(i))].map(v=>v.toFixed(1)).join(',')).join(' ');s+='<polygon points="'+pts+'" fill="none" stroke="#e3e9f3" stroke-width="1"/>'});
+ DOMAINS.forEach((d,i)=>{const x=cx+R*Math.cos(ang(i)),y=cy+R*Math.sin(ang(i));s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x+'" y2="'+y+'" stroke="#e3e9f3"/>';const lx=cx+(R+22)*Math.cos(ang(i)),ly=cy+(R+22)*Math.sin(ang(i));s+='<text x="'+lx+'" y="'+(ly+4)+'" text-anchor="middle" font-size="11" fill="#6d7893">'+d+'</text>'});
+ const poly=vals.map((v,i)=>[cx+R*v*Math.cos(ang(i)),cy+R*v*Math.sin(ang(i))].map(q=>q.toFixed(1)).join(',')).join(' ');
+ s+='<polygon points="'+poly+'" fill="rgba(47,86,204,.18)" stroke="#2f56cc" stroke-width="2"/>';
+ vals.forEach((v,i)=>{s+='<circle cx="'+(cx+R*v*Math.cos(ang(i))).toFixed(1)+'" cy="'+(cy+R*v*Math.sin(ang(i))).toFixed(1)+'" r="3.5" fill="#2f56cc"/>'});
+ const detail=DOMAINS.map(d=>acc[d].n?d+' '+(acc[d].ok/acc[d].n*100).toFixed(0)+'%':d+' 未练').join(' · ');
+ s+='<text x="170" y="272" text-anchor="middle" font-size="10.5" fill="#8a95ad">'+esc(detail)+'</text></svg>';
+ $('#radar').innerHTML=s;
+}
+function renderTasks(){
+ const due=dueList(),off=DB.taskOffset||0,out=[];
+ due.slice(0,2).forEach(pid=>{const p=PROBLEMS.find(q=>q.id===pid);if(p)out.push({t:'复习到期错题：'+p.title,d:'错因：'+(DB.wrong[pid].reason||'未归类')+' · 重新独立作答',act:'打开题目',fn:()=>openProblem(pid),c:'orange'})});
+ const acc=accByDom(),weak=DOMAINS.filter(d=>acc[d].n>0).sort((x,y)=>acc[x].ok/acc[x].n-acc[y].ok/acc[y].n)[0]||'力学';
+ const cand=PROBLEMS.filter(p=>p.dom===weak&&!DB.attempts.some(a=>a.pid===p.id&&a.correct));
+ const pick=cand.length?cand[(off+1)%cand.length]:PROBLEMS[(off+3)%PROBLEMS.length];
+ out.push({t:'新题推荐：'+pick.title,d:'薄弱领域：'+weak+' · '+pick.level+' · 建议先只用提示 1',act:'开始作答',fn:()=>openProblem(pick.id),c:'blue'});
+ const sim=SIMS[(off+2)%SIMS.length];
+ out.push({t:'可视化实验：'+sim.name,d:'拖动参数，观察数值解与解析解是否吻合',act:'进入仿真',fn:()=>{selectSim(sim.id);go('lab')},c:'green'});
+ out.push({t:'自检习惯：量纲 + 极限 + 特值',d:'在工具箱用量纲分析器验算一个刚做过的公式',act:'打开工具箱',fn:()=>go('toolbox'),c:'grey'});
+ const wt=WONDERS[Math.floor(Date.now()/DAY)%WONDERS.length];
+ out.push({t:'趣味思考：'+wt.title,d:'不求标准答案，先写下你的猜想再揭晓',act:'去想一想',fn:()=>{F.wonderRealm='全部';go('wonder');setTimeout(()=>{const el=$('#wonderCard_'+wt.id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},80)},c:'orange'});
+ $('#todayTasks').innerHTML=out.map((x,i)=>'<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed var(--line)"><span class="tag '+(x.c==='grey'?'':x.c)+'">'+(i+1)+'</span><div style="flex:1"><div style="font-size:12.8px;font-weight:600">'+esc(x.t)+'</div><div class="tiny muted">'+esc(x.d)+'</div></div><button class="btn sm" data-i="'+i+'">'+esc(x.act)+'</button></div>').join('');
+ $$('#todayTasks button').forEach(b=>b.onclick=()=>out[Number(b.dataset.i)].fn());
+}
+function renderRoadmap(){
+ $('#roadmap').innerHTML=ROADMAP.map((st,i)=>{
+  const done=st.items.filter((_,j)=>DB.plan[i+'_'+j]).length,pct=Math.round(done/st.items.length*100);
+  return '<div class="card stage"><div class="num">'+st.n+'</div><h4>'+st.t+'</h4><div class="meta">'+st.meta+' · '+done+'/'+st.items.length+'</div><div class="bar" style="margin-bottom:8px"><i style="width:'+pct+'%"></i></div>'+
+   st.items.map((it,j)=>{const k=i+'_'+j,ck=!!DB.plan[k];return '<label class="check '+(ck?'done':'')+'"><input type="checkbox" data-k="'+k+'" '+(ck?'checked':'')+'><span>'+esc(it)+'</span></label>'}).join('')+'</div>';
+ }).join('');
+ $$('#roadmap input[type=checkbox]').forEach(c=>c.onchange=()=>{DB.plan[c.dataset.k]=c.checked;save();renderRoadmap();topbar()});
+}
+
+/* ---------------- 知识图谱 ---------------- */
+function renderGraph(){
+ $('#levelChips').innerHTML=LEVELS.map(l=>'<button class="chip '+(F.level===l?'on':'')+'" data-l="'+l+'">'+l+'</button>').join('');
+ $('#domChips').innerHTML=['全部'].concat(DOMAINS).map(d=>'<button class="chip '+(F.dom===d?'on':'')+'" data-d="'+d+'">'+d+'</button>').join('');
+ $$('#levelChips button').forEach(b=>b.onclick=()=>{F.level=b.dataset.l;renderGraph()});
+ $$('#domChips button').forEach(b=>b.onclick=()=>{F.dom=b.dataset.d;renderGraph()});
+ $('#topicSearch').value=F.topicQ;
+ $('#topicSearch').oninput=e=>{F.topicQ=e.target.value;renderTopicList()};
+ renderTopicList();
+}
+function renderTopicList(){
+ const q=F.topicQ.trim().toLowerCase();
+ const list=TOPICS.filter(t=>(F.level==='全部'||t.level===F.level)&&(F.dom==='全部'||t.dom===F.dom)&&(!q||(t.name+t.formulas.map(f=>f[0]+f[1]).join('')+t.cond+t.trap).toLowerCase().includes(q)));
+ $('#topicList').innerHTML=list.length?list.map(t=>{
+  const open=F.openTopics.has(t.id);
+  return '<div class="item '+(open?'open':'')+'" data-id="'+t.id+'"><div class="head"><span class="tag '+(t.level==='初中'?'green':'blue')+'">'+t.level+'</span><span class="tag">'+t.dom+'</span><span class="t">'+esc(t.name)+'</span>'+(DB.progress[t.id]?'<span class="tag green">已掌握</span>':'')+'<span class="arw">▶</span></div>'+
+   '<div class="body"><div class="blk"><label>核心公式与含义</label>'+t.formulas.map(f=>'<span class="eq" style="margin-bottom:5px"><b>'+esc(f[0])+'</b>　<span class="muted tiny">'+esc(f[1])+'</span></span>').join('')+'</div>'+
+   '<div class="blk"><label>适用条件</label><div class="notice">'+esc(t.cond)+'</div></div>'+
+   '<div class="blk"><label>高频易错点</label><div class="notice warn">'+esc(t.trap)+'</div></div>'+
+   '<div class="blk"><label>竞赛延伸</label><p style="font-size:12.8px;color:var(--ink2);margin:0">'+esc(t.ext)+'</p></div>'+
+   '<label class="check" style="margin-top:12px"><input type="checkbox" data-master="'+t.id+'" '+(DB.progress[t.id]?'checked':'')+'><span>标记「已掌握」</span></label></div></div>';
+ }).join(''):'<div class="empty">没有匹配的知识点，换个关键词或筛选条件试试。</div>';
+ $$('#topicList .head').forEach(h=>h.onclick=e=>{if(e.target.closest('input'))return;const id=h.parentElement.dataset.id;F.openTopics.has(id)?F.openTopics.delete(id):F.openTopics.add(id);renderTopicList()});
+ $$('#topicList [data-master]').forEach(c=>c.onchange=()=>{DB.progress[c.dataset.master]=c.checked;save();renderTopicList()});
+}
+
+/* ---------------- 模型库 ---------------- */
+function renderModels(){
+ $('#modelList').innerHTML=MODELS.map(m=>{
+  const open=F.openModels.has(m.id);
+  return '<div class="item '+(open?'open':'')+'" data-id="'+m.id+'"><div class="head"><span class="tag orange">'+m.level+'</span><span class="t">'+esc(m.name)+'</span><span class="arw">▶</span></div>'+
+  '<div class="body"><div class="blk"><label>识别信号</label><div class="notice">'+esc(m.signal)+'</div></div>'+
+  '<div class="blk"><label>建模流程</label><ol class="clean">'+m.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol></div>'+
+  '<div class="blk"><label>关键方程</label>'+m.eq.map(x=>'<span class="eq" style="margin-bottom:5px">'+esc(x)+'</span>').join('')+'</div>'+
+  '<div class="blk"><label>常见陷阱</label><ul class="clean">'+m.traps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
+  '<div class="blk"><label>一句话策略</label><div class="notice ok">'+esc(m.tactic)+'</div></div>'+
+  (m.problems.length?'<div class="blk"><label>配套练习</label><div class="row">'+m.problems.map(pid=>{const p=PROBLEMS.find(q=>q.id===pid);return p?'<button class="btn sm" data-pid="'+pid+'">去练：'+esc(p.title)+'</button>':''}).join('')+'</div></div>':'')+'</div></div>';
+ }).join('');
+ $$('#modelList .head').forEach(h=>h.onclick=()=>{const id=h.parentElement.dataset.id;F.openModels.has(id)?F.openModels.delete(id):F.openModels.add(id);renderModels()});
+ $$('#modelList [data-pid]').forEach(b=>b.onclick=e=>{e.stopPropagation();openProblem(b.dataset.pid)});
+}
+
+/* ---------------- 奇思妙想 ---------------- */
+const LB=t=>'<div style="font-size:11px;letter-spacing:1px;color:var(--ink3);margin:12px 0 6px">'+t+'</div>';
+function renderDailyWonder(){
+ const w=WONDERS[Math.floor(Date.now()/DAY)%WONDERS.length];
+ const rev=Object.keys(DB.wonder.revealed).filter(k=>DB.wonder.revealed[k]).length;
+ $('#dailyWonder').innerHTML='<div style="font-size:14px;font-weight:650">'+esc(w.title)+'</div>'+
+  '<p style="font-size:12.8px;color:var(--ink2);margin:6px 0 10px">'+esc(w.hook)+'</p>'+
+  '<div class="row"><span class="tag orange">'+esc(w.realm)+'</span><span class="tiny muted">已揭晓 '+rev+' / '+WONDERS.length+' 个奇妙</span><div style="flex:1"></div><button class="btn primary sm" id="btnDailyWonder">去猜一猜</button></div>';
+ $('#btnDailyWonder').onclick=()=>{F.wonderRealm='全部';go('wonder');setTimeout(()=>{const el=$('#wonderCard_'+w.id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},90)};
+}
+function renderWonder(){
+ const realms=['全部'].concat(Array.from(new Set(WONDERS.map(w=>w.realm))));
+ $('#wonderChips').innerHTML=realms.map(r=>'<button class="chip '+(F.wonderRealm===r?'on':'')+'" data-r="'+esc(r)+'">'+esc(r)+'</button>').join('');
+ $$('#wonderChips button').forEach(b=>b.onclick=()=>{F.wonderRealm=b.dataset.r;renderWonder()});
+ const rev=Object.keys(DB.wonder.revealed).filter(k=>DB.wonder.revealed[k]).length,pct=Math.round(rev/WONDERS.length*100);
+ $('#wonderProgressText').textContent='已揭晓 '+rev+' / '+WONDERS.length+' 个奇妙 · 收藏 '+Object.keys(DB.wonder.fav).filter(k=>DB.wonder.fav[k]).length+' 个';
+ $('#wonderProgressBar').style.width=pct+'%';
+ $('#btnRandomWonder').onclick=()=>{const w=WONDERS[Math.floor(Math.random()*WONDERS.length)];F.wonderRealm='全部';renderWonder();setTimeout(()=>{const el=$('#wonderCard_'+w.id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},60)};
+ $('#btnRefreshIdeas').onclick=async()=>{await loadIdeas();renderIdeaWall()};
+ const list=WONDERS.filter(w=>F.wonderRealm==='全部'||w.realm===F.wonderRealm);
+ $('#wonderList').innerHTML=list.map((w,i)=>{
+  const open=!!DB.wonder.revealed[w.id],note=DB.wonder.notes[w.id]||'',fav=!!DB.wonder.fav[w.id];
+  return '<div class="card pad" id="wonderCard_'+w.id+'">'+
+   '<div class="spread"><div class="row"><span class="tag orange">'+esc(w.realm)+'</span><span class="tag '+(w.level==='脑洞'?'blue':'')+'">'+esc(w.level)+'</span></div><span class="tiny muted">No.'+String(i+1).padStart(2,'0')+'</span></div>'+
+   '<h3 style="margin:10px 0 8px;font-size:15px">'+esc(w.title)+'</h3>'+
+   '<div class="notice warn">'+esc(w.hook)+'</div>'+
+   LB('先想一想')+'<ol class="clean">'+w.think.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>'+
+   LB('你的猜想（自动同步到服务端）')+'<textarea class="input" rows="2" data-note="'+w.id+'" placeholder="先别查资料，写下第一反应…">'+esc(note)+'</textarea>'+
+   '<div class="row" style="margin-top:9px"><button class="btn sm" data-act="share" data-w="'+w.id+'">分享到猜想墙</button><button class="btn sm" data-act="fav" data-w="'+w.id+'">'+(fav?'已收藏':'收藏')+'</button><button class="btn primary sm" data-act="'+(open?'hide':'reveal')+'" data-w="'+w.id+'">'+(open?'收起谜底':'揭晓谜底')+'</button></div>'+
+   '<div class="tiny muted" id="shareMsg_'+w.id+'" style="margin-top:6px"></div>'+
+   (open?'<div class="sol"><b style="color:var(--brand)">揭晓</b><p style="font-size:12.8px;line-height:1.9;color:var(--ink2);margin:7px 0">'+esc(w.reveal)+'</p><span class="eq">'+esc(w.formula)+'</span>'+
+    LB('动手试试')+'<div class="notice ok">'+esc(w.tryIt)+'</div>'+
+    LB('更奇妙的是')+'<p style="font-size:12.8px;line-height:1.85;color:var(--ink2);margin:0">'+esc(w.deeper)+'</p></div>':'')+
+   LB('关联知识点')+'<div class="row">'+w.topics.map(tid=>{const t=TOPICS.find(t=>t.id===tid);return t?'<button class="btn sm" data-act="topic" data-t="'+esc(t.name)+'" data-tid="'+tid+'">'+esc(t.name)+'</button>':''}).join('')+'</div>'+
+   '</div>';
+ }).join('');
+ $$('#wonderList textarea[data-note]').forEach(t=>{t.oninput=()=>{DB.wonder.notes[t.dataset.note]=t.value;save()}});
+ $$('#wonderList button[data-act]').forEach(b=>b.onclick=async()=>{
+  const id=b.dataset.w,act=b.dataset.act;
+  if(act==='reveal'){DB.wonder.revealed[id]=true;save();renderWonder();return}
+  if(act==='hide'){delete DB.wonder.revealed[id];save();renderWonder();return}
+  if(act==='fav'){DB.wonder.fav[id]=!DB.wonder.fav[id];save();renderWonder();return}
+  if(act==='topic'){F.topicQ=b.dataset.t;F.level='全部';F.dom='全部';F.openTopics.add(b.dataset.tid);go('graph');return}
+  if(act==='share'){
+   const ta=$('#wonderList textarea[data-note="'+id+'"]'),text=(ta?ta.value:'').trim();
+   const msg=$('#shareMsg_'+id);
+   if(!text){msg.innerHTML='<span style="color:var(--err)">先写一句猜想再分享。</span>';return}
+   msg.textContent='正在发布…';const r=await postIdea(id,text);
+   msg.innerHTML=r.ok?'<span style="color:var(--ok)">已发布到共享猜想墙。</span>':'<span style="color:var(--warn)">'+esc(r.msg)+'</span>';
+   renderIdeaWall();return;
+  }
+ });
+ renderIdeaWall();
+}
+function renderIdeaWall(){
+ const box=$('#ideaWall');if(!box)return;
+ if(!SYNC.online){box.innerHTML='<div class="empty">后端服务未连接，猜想墙需要服务端存储。运行 <code>poetry run python app.py</code> 后点击顶部「仅本机缓存」重试。</div>';return}
+ if(!SYNC.ideas.length){box.innerHTML='<div class="empty">还没有人分享猜想。在上面写下你的第一反应，点「分享到猜想墙」就能成为第一条。</div>';return}
+ box.innerHTML=SYNC.ideas.slice(0,10).map(it=>{
+  const w=WONDERS.find(x=>x.id===it.wid),d=new Date(it.ts);
+  return '<div style="padding:9px 0;border-bottom:1px dashed var(--line);display:flex;gap:10px;align-items:flex-start"><span class="tag orange" style="flex:0 0 auto">'+esc(w?w.realm:'其他')+'</span><div style="flex:1"><div style="font-size:12.8px">'+esc(it.text)+'</div><div class="tiny muted">关于「'+esc(w?w.title:it.wid)+'」 · '+d.toLocaleString('zh-CN')+'</div></div></div>';
+ }).join('');
+}
+
+/* ---------------- AI 助手 ---------------- */
+const AIQ=[
+ ['我遇到一道题：','AI 整理成训练场卡片'],
+ ['我有个想法：为什么……','AI 整理成奇思妙想卡片'],
+ ['帮我理解一个概念：','只对话讲解，不生成卡片']
+];
+let AIBUSY=false;
+function renderAI(){
+ $('#aiQuick').innerHTML=AIQ.map((q,i)=>'<button class="btn sm" data-q="'+i+'">'+esc(q[0])+'</button>').join('');
+ $$('#aiQuick button').forEach(b=>b.onclick=()=>{$('#aiInput').value=AIQ[Number(b.dataset.q)][0];$('#aiInput').focus()});
+ $('#aiSend').onclick=aiSend;
+ $('#aiInput').onkeydown=e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();aiSend()}};
+ $('#aiCfgSave').onclick=saveAIConfig;
+ renderAIMsgs();
+ loadAIConfig();
+}
+function renderAIMsgs(){
+ const box=$('#chatBox');
+ if(!DB.ai.msgs.length){box.innerHTML='<div class="empty" style="padding:20px 10px">跟我说说你遇到的题目，或某个觉得奇怪的物理现象。<br>AI 会整理成草稿卡片 —— 你核对补全后，才入库到对应栏目。</div>';return}
+ box.innerHTML=DB.ai.msgs.map((m,i)=>{
+  if(m.role==='user')return '<div class="chatmsg user">'+esc(m.text)+'<div class="meta">'+new Date(m.ts).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+'</div></div>';
+  const tag=m.mode==='ai'?'<span class="tag blue">在线 AI · '+esc(m.model||'')+'</span>':m.mode==='error'?'<span class="tag red">服务不可用</span>':'<span class="tag">本地规则模式</span>';
+  return '<div class="chatmsg bot">'+esc(m.text)+
+   (m.card?cardDraftHTML(m,i):'')+
+   '<div class="meta">'+tag+'<span>'+new Date(m.ts).toLocaleString('zh-CN')+'</span></div></div>';
+ }).join('');
+ bindCardForm(box);
+ box.scrollTop=box.scrollHeight;
+}
+function cardDraftHTML(m,i){
+ const c=m.card;
+ if(c.added)return '<div class="notice ok" style="margin-top:10px">已添加到「'+(c.added==='practice'?'分级训练场':'奇思妙想')+'」。</div>';
+ let h='<div class="cardform" data-ci="'+i+'"><h4>卡片草稿 · '+(c.kind==='problem'?'训练场题目':'奇思妙想')+'</h4><div class="tiny muted">'+esc(c.summary||'')+'</div>';
+ if(c.kind==='problem'){
+  const p=c.problem;
+  h+='<div class="blk2"><label>标题</label><input class="input" data-f="title" value="'+esc(p.title)+'"></div>'+
+   '<div class="grid g2" style="margin-top:9px"><div><label>难度</label><select class="input" data-f="level"><option value="初中" '+(p.level==='初中'?'selected':'')+'>初中</option><option value="高中" '+(p.level!=='初中'?'selected':'')+'>高中</option></select></div>'+
+   '<div><label>领域</label><select class="input" data-f="dom">'+DOMAINS.map(d=>'<option '+(p.dom===d?'selected':'')+'>'+d+'</option>').join('')+'</select></div></div>'+
+   '<div class="blk2"><label>题干</label><textarea class="input" rows="4" data-f="text">'+esc(p.text)+'</textarea></div>'+
+   '<div class="blk2"><label>提示（每行一条，最多 6 条）</label><textarea class="input" rows="3" data-f="hints">'+esc((p.hints||[]).join('\n'))+'</textarea></div>'+
+   '<div class="blk2"><label>标准答案（填入核验过的数值；暂无答案可留空）</label>'+
+   [0,1,2].map(n=>{const a=(p.answers||[])[n]||{};return '<div class="ansrow"><input class="input" data-a="'+n+'" data-af="label" placeholder="所求量名称" value="'+esc(a.label||'')+'"><input class="input mono" data-a="'+n+'" data-af="value" placeholder="数值" style="max-width:110px" value="'+(a.value!==undefined?a.value:'')+'"><input class="input mono" data-a="'+n+'" data-af="unit" placeholder="单位" style="max-width:80px" value="'+esc(a.unit||'')+'"></div>'}).join('')+'</div>'+
+   '<div class="blk2"><label>分步解析（每行一步）</label><textarea class="input" rows="3" data-f="solution">'+esc((p.solution||[]).join('\n'))+'</textarea></div>'+
+   '<div class="blk2"><label>易错点</label><input class="input" data-f="trap" value="'+esc(p.trap||'')+'"></div>';
+ }else{
+  const w=c.wonder;
+  h+='<div class="blk2"><label>标题</label><input class="input" data-f="title" value="'+esc(w.title)+'"></div>'+
+   '<div class="grid g2" style="margin-top:9px"><div><label>类别</label><input class="input" data-f="realm" value="'+esc(w.realm)+'"></div><div><label>等级</label><select class="input" data-f="level">'+['入门','进阶','脑洞'].map(l=>'<option '+(w.level===l?'selected':'')+'>'+l+'</option>').join('')+'</select></div></div>'+
+   '<div class="blk2"><label>直觉陷阱</label><textarea class="input" rows="2" data-f="hook">'+esc(w.hook)+'</textarea></div>'+
+   '<div class="blk2"><label>先想一想（每行一条）</label><textarea class="input" rows="2" data-f="think">'+esc((w.think||[]).join('\n'))+'</textarea></div>'+
+   '<div class="blk2"><label>揭晓</label><textarea class="input" rows="4" data-f="reveal">'+esc(w.reveal)+'</textarea></div>'+
+   '<div class="blk2"><label>关键公式</label><input class="input mono" data-f="formula" value="'+esc(w.formula||'')+'"></div>'+
+   '<div class="blk2"><label>动手试试</label><textarea class="input" rows="2" data-f="tryIt">'+esc(w.tryIt||'')+'</textarea></div>'+
+   '<div class="blk2"><label>更奇妙的是</label><textarea class="input" rows="2" data-f="deeper">'+esc(w.deeper||'')+'</textarea></div>';
+ }
+ h+='<div class="notice warn" style="margin-top:11px;font-size:11.5px">AI / 规则生成的内容未经独立核验；请确认公式、数值与适用条件后再入库。</div>'+
+  '<div class="row" style="margin-top:10px"><button class="btn primary sm" data-add="1">'+(c.kind==='problem'?'核对无误，添加到训练场':'核对无误，添加到奇思妙想')+'</button><button class="btn sm" data-drop="1">丢弃草稿</button></div></div>';
+ return h;
+}
+function bindCardForm(box){
+ $$('.cardform',box).forEach(f=>{
+  const i=Number(f.dataset.ci),m=DB.ai.msgs[i];if(!m||!m.card)return;
+  const tgt=m.card.kind==='problem'?m.card.problem:m.card.wonder;
+  $$('[data-f]',f).forEach(el=>{
+   const h=()=>{const k=el.dataset.f;
+    if(k==='hints'||k==='solution'||k==='think')tgt[k]=el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+    else tgt[k]=el.value;};
+   el.oninput=h;el.onchange=h;
+  });
+  $$('[data-a]',f).forEach(el=>{
+   el.oninput=()=>{const n=Number(el.dataset.a),fk=el.dataset.af;
+    if(!Array.isArray(tgt.answers))tgt.answers=[];
+    if(!tgt.answers[n])tgt.answers[n]={label:'',value:'',unit:''};
+    tgt.answers[n][fk]=el.value;};
+  });
+  $('[data-add]',f).onclick=()=>addCardTo(i);
+  $('[data-drop]',f).onclick=()=>{m.card=null;save();renderAIMsgs()};
+ });
+}
+function addCardTo(i){
+ const m=DB.ai.msgs[i];if(!m||!m.card)return;
+ const c=m.card;
+ if(c.kind==='problem'){
+  const p=c.problem;
+  if(!String(p.title||'').trim()||!String(p.text||'').trim()){alert('请先填写标题与题干。');return}
+  const answers=(p.answers||[]).filter(a=>a&&String(a.label||'').trim()&&String(a.value??'').trim()!==''&&isFinite(Number(a.value)))
+   .map(a=>({label:String(a.label).trim(),value:Number(a.value),unit:String(a.unit||'—').trim()||'—',tol:0.01}));
+  if(!answers.length&&!confirm('还没有填任何标准答案。\n入库后这道题将没有参考答案、无法自动判分。\n确定仍要添加吗？'))return;
+  DB.custom.problems.push({id:'cp'+(DB.custom.problems.length+1),custom:true,
+   level:p.level==='初中'?'初中':'高中',dom:p.dom||'力学',model:'',
+   title:String(p.title).trim(),text:String(p.text).trim(),
+   hints:(p.hints&&p.hints.length)?p.hints:['（暂无提示）'],
+   answers,solution:(p.solution&&p.solution.length)?p.solution:['（解析待补充）'],
+   trap:String(p.trap||'').trim()||'（无）'});
+  c.added='practice';
+ }else{
+  const w=c.wonder;
+  if(!String(w.title||'').trim()||!String(w.reveal||'').trim()){alert('请先填写标题与揭晓内容。');return}
+  DB.custom.wonders.push({id:'cw'+(DB.custom.wonders.length+1),custom:true,
+   title:String(w.title).trim(),realm:String(w.realm||'日常').trim()||'日常',level:['入门','进阶','脑洞'].includes(w.level)?w.level:'入门',
+   topics:Array.isArray(w.topics)?w.topics:[],
+   hook:String(w.hook||'').trim()||'直觉上会怎么回答？先写下来。',
+   think:(w.think&&w.think.length)?w.think:['第一反应的答案是什么？依据是什么假设？'],
+   reveal:String(w.reveal).trim(),formula:String(w.formula||'').trim()||'—',
+   tryIt:String(w.tryIt||'').trim()||'（待补充）',deeper:String(w.deeper||'').trim()||'（待补充）'});
+  c.added='wonder';
+ }
+ rebuildItems();save();renderAIMsgs();topbar();
+ const dest=c.kind==='problem'?'practice':'wonder';
+ openModal('<h3>已入库</h3><p>卡片已加入你的题库，栏目内会显示「我添加」标签。'+(c.kind==='problem'?'注意：它的标准答案由你（或 AI 草稿）填写，没有经过内置题库那样的独立数值核验 —— 请再验一遍。':'去奇思妙想里看看它的完整样子吧。')+'</p><div class="row" style="margin-top:14px"><button class="btn primary" data-go="'+dest+'">去看看</button><button class="btn" data-x="1">继续聊天</button></div>');
+ $$('#modal [data-go]').forEach(b=>b.onclick=()=>{closeModal();go(b.dataset.go)});
+ $$('#modal [data-x]').forEach(b=>b.onclick=closeModal);
+}
+async function aiSend(){
+ if(AIBUSY)return;
+ const inp=$('#aiInput'),text=inp.value.trim();if(!text)return;
+ DB.ai.msgs.push({role:'user',text,ts:Date.now()});
+ if(DB.ai.msgs.length>60)DB.ai.msgs=DB.ai.msgs.slice(-60);
+ save();inp.value='';renderAIMsgs();
+ AIBUSY=true;const btn=$('#aiSend');btn.disabled=true;btn.textContent='思考中…';
+ try{
+  const hist=DB.ai.msgs.slice(-16).map(m=>({role:m.role,content:m.text}));
+  const r=await api('/api/ai/chat',{method:'POST',body:JSON.stringify({messages:hist})});
+  DB.ai.msgs.push({role:'assistant',text:r.reply||'（空回复）',card:r.card||null,mode:r.mode,model:r.model,ts:Date.now()});
+ }catch(e){
+  DB.ai.msgs.push({role:'assistant',text:'AI 服务不可用：'+e.message+'\nAI 对话需要后端服务在线（poetry run python app.py）。',mode:'error',ts:Date.now()});
+ }
+ if(DB.ai.msgs.length>60)DB.ai.msgs=DB.ai.msgs.slice(-60);
+ save();renderAIMsgs();
+ AIBUSY=false;btn.disabled=false;btn.textContent='发送';
+}
+async function loadAIConfig(){
+ const tag=$('#aiModeTag');
+ try{
+  const r=await api('/api/ai/config');
+  if(r.configured){tag.className='tag blue';tag.textContent='在线 AI · '+r.model}
+  else{tag.className='tag';tag.textContent='本地规则模式（未配置）'}
+  if(r.base_url)$('#aiCfgBase').value=r.base_url;
+  if(r.model)$('#aiCfgModel').value=r.model;
+ }catch(e){tag.className='tag red';tag.textContent='后端未连接'}
+}
+async function saveAIConfig(){
+ const msg=$('#aiCfgMsg');msg.textContent='保存中…';
+ try{
+  const body={base_url:$('#aiCfgBase').value.trim(),model:$('#aiCfgModel').value.trim()};
+  if($('#aiCfgKey').value.trim())body.api_key=$('#aiCfgKey').value.trim();
+  const r=await api('/api/ai/config',{method:'PUT',body:JSON.stringify(body)});
+  msg.textContent=r.configured?'已保存：在线 AI（'+r.model+'）':'已保存：密钥/模型未填全，仍为本地规则模式';
+  $('#aiCfgKey').value='';
+  loadAIConfig();
+ }catch(e){msg.textContent='保存失败：'+e.message}
+}
+
+/* ---------------- 仿真室 ---------------- */
+const LAB={id:'proj',def:null,params:{},state:null,playing:true,speed:1,lastTs:0,lastUI:0};
+function selectSim(id){
+ const d=SIMS.find(x=>x.id===id)||SIMS[0];LAB.id=id;LAB.def=d;LAB.params={};
+ d.params.forEach(p=>LAB.params[p.k]=p.type==='select'?p.val:Number(p.val));
+ LAB.state=d.init(LAB.params);LAB.playing=true;LAB.lastTs=0;
+ $('#btnPlay').textContent='暂停';
+ renderSimList();renderParams();
+ $('#simNote').innerHTML=d.note;
+ $('#simLegend').innerHTML=d.legend.map(x=>'<span><i style="background:'+x.c+'"></i>'+esc(x.n)+'</span>').join('');
+ updateSimReadouts();drawSim();
+}
+function renderSimList(){
+ $('#simList').innerHTML=SIMS.map(s=>'<button data-s="'+s.id+'" class="'+(s.id===LAB.id?'on':'')+'"><b>'+esc(s.name)+'</b><br><span class="tiny muted">'+esc(s.brief)+'</span></button>').join('');
+ $$('#simList button').forEach(b=>b.onclick=()=>selectSim(b.dataset.s));
+}
+function renderParams(){
+ $('#paramBox').innerHTML=LAB.def.params.map(p=>{
+  if(p.type==='select')return '<div class="param"><div class="pl"><span>'+esc(p.label)+'</span></div><select class="input" data-k="'+p.k+'">'+p.options.map(o=>'<option value="'+o.v+'" '+(o.v===LAB.params[p.k]?'selected':'')+'>'+esc(o.n)+'</option>').join('')+'</select></div>';
+  return '<div class="param"><div class="pl"><span>'+esc(p.label)+'</span><b><span id="v_'+p.k+'">'+fmtNum(LAB.params[p.k],2)+'</span> '+esc(p.unit)+'</b></div><input type="range" data-k="'+p.k+'" min="'+p.min+'" max="'+p.max+'" step="'+p.step+'" value="'+LAB.params[p.k]+'"></div>';
+ }).join('');
+ $$('#paramBox input[type=range]').forEach(r=>r.oninput=()=>{const k=r.dataset.k;LAB.params[k]=Number(r.value);$('#v_'+k).textContent=fmtNum(LAB.params[k],2);LAB.state=LAB.def.init(LAB.params);updateSimReadouts();drawSim()});
+ $$('#paramBox select').forEach(s=>s.onchange=()=>{LAB.params[s.dataset.k]=s.value;LAB.state=LAB.def.init(LAB.params);updateSimReadouts();drawSim()});
+}
+function fitCanvas(){
+ const c=$('#simCanvas');if(!c)return null;const W=c.clientWidth,H=c.clientHeight;if(W<60||H<60)return null;
+ const dpr=window.devicePixelRatio||1,nw=Math.round(W*dpr),nh=Math.round(H*dpr);
+ if(c.width!==nw||c.height!==nh){c.width=nw;c.height=nh}
+ const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return{ctx,W,H};
+}
+function drawSim(){if(VIEW!=='lab')return;const f=fitCanvas();if(f)LAB.def.draw(f.ctx,f.W,f.H,LAB.state,LAB.params)}
+function updateSimReadouts(){
+ const s=LAB.state;
+ $('#simTimeTag').textContent=LAB.id==='mag'?'φ = '+fmtNum(s.phi,2)+' rad':'t = '+fmtNum(s.t,2)+' s';
+ $('#readouts').innerHTML=LAB.def.rows(s,LAB.params).map(r=>'<div class="kv"><span class="k">'+esc(r[0])+'</span><span class="v">'+esc(r[1])+'</span></div>').join('');
+}
+function labTick(ts){
+ if(VIEW==='lab'){
+  if(!LAB.lastTs)LAB.lastTs=ts;
+  const real=Math.min(.08,(ts-LAB.lastTs)/1000);LAB.lastTs=ts;
+  if(LAB.playing&&real>0){
+   const total=real*LAB.def.rate*LAB.speed,n=Math.max(1,Math.min(400,Math.ceil(total/(1/240)))),h=total/n;
+   for(let i=0;i<n;i++)LAB.def.step(h,LAB.params,LAB.state);
+  }
+  drawSim();
+  if(ts-LAB.lastUI>110){updateSimReadouts();LAB.lastUI=ts}
+ }else LAB.lastTs=0;
+ requestAnimationFrame(labTick);
+}
+function renderLab(){if(!LAB.def)selectSim('proj');else{renderSimList();updateSimReadouts();drawSim()}
+ $('#btnPlay').onclick=()=>{LAB.playing=!LAB.playing;$('#btnPlay').textContent=LAB.playing?'暂停':'继续'};
+ $('#btnReset').onclick=()=>{LAB.state=LAB.def.init(LAB.params);LAB.playing=true;$('#btnPlay').textContent='暂停';updateSimReadouts();drawSim()};
+ $('#speedSel').onchange=e=>LAB.speed=Number(e.target.value);
+}
+window.addEventListener('resize',()=>{if(VIEW==='lab')drawSim()});
+
+/* ---------------- 表达式解析（数值 / 量纲共用） ---------------- */
+function tokenize(src){
+ const out=[],re=/^((?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?|[A-Za-z_][A-Za-z_0-9]*|\*\*|[+\-*/^()]|.)/;
+ let s=String(src);
+ for(;;){s=s.replace(/^\s+/,'');if(!s.length)break;const m=re.exec(s);if(!m)break;out.push(m[1]==='**'?'^':m[1]);s=s.slice(m[0].length)}
+ out.push('$');return out;
+}
+function parseAST(src){
+ const tk=tokenize(src);let i=0;
+ const peek=()=>tk[i],take=()=>tk[i++];
+ function atom(){const t=take();
+  if(t==='-')return{t:'neg',a:factor()};if(t==='+')return factor();
+  if(t==='('){const e=expr();if(take()!==')')throw new Error('括号不匹配');return e}
+  if(/^[\d.]/.test(t))return{t:'num',v:Number(t)};
+  if(/^[A-Za-z_]/.test(t)){if(peek()==='('){take();const e=expr();if(take()!==')')throw new Error('括号不匹配');return{t:'call',name:t,a:e}}return{t:'id',name:t}}
+  throw new Error('无法解析符号「'+t+'」')}
+ function factor(){let a=atom();while(peek()==='^'){take();a={t:'pow',a,b:atom()}}return a}
+ function term(){let a=factor();while(peek()==='*'||peek()==='/'){const op=take();a={t:'bin',op,a,b:factor()}}return a}
+ function expr(){let a=term();while(peek()==='+'||peek()==='-'){const op=take();a={t:'bin',op,a,b:term()}}return a}
+ const ast=expr();if(peek()!=='$')throw new Error('多余符号「'+peek()+'」');return ast;
+}
+function evalNum(ast,vars){
+ switch(ast.t){
+  case'num':return ast.v;
+  case'id':{const v=vars[ast.name];if(typeof v==='number')return v;throw new Error('未知变量「'+ast.name+'」')}
+  case'neg':return-evalNum(ast.a,vars);
+  case'bin':{const a=evalNum(ast.a,vars),b=evalNum(ast.b,vars);return ast.op==='+'?a+b:ast.op==='-'?a-b:ast.op==='*'?a*b:a/b}
+  case'pow':return Math.pow(evalNum(ast.a,vars),evalNum(ast.b,vars));
+  case'call':{const v=evalNum(ast.a,vars),n=ast.name.toLowerCase();const M={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,abs:Math.abs,exp:Math.exp,ln:Math.log,log:Math.log10};if(!(n in M))throw new Error('未知函数「'+ast.name+'」');return M[n](v)}
+ }
+}
+function parseAnswer(src){
+ const s=String(src).trim().replace(/[，,]/g,'').replace(/×/g,'*').replace(/÷/g,'/').replace(/π/g,'pi')
+  .replace(/√\s*\(/g,'sqrt(').replace(/√\s*(\d+(?:\.\d+)?)/g,'sqrt($1)')
+  .replace(/²/g,'^2').replace(/³/g,'^3').replace(/[（]/g,'(').replace(/[）]/g,')').replace(/\s+/g,'');
+ if(!s)throw new Error('请填写答案');
+ return evalNum(parseAST(s),{pi:Math.PI,e:Math.E});
+}
+const Z7=()=>[0,0,0,0,0,0,0];
+const DIMVARS={
+ m:[1,0,0,0,0,0,0,'质量'],M:[1,0,0,0,0,0,0,'质量'],
+ s:[0,1,0,0,0,0,0,'长度'],x:[0,1,0,0,0,0,0,'位移'],L:[0,1,0,0,0,0,0,'长度'],r:[0,1,0,0,0,0,0,'半径'],h:[0,1,0,0,0,0,0,'高度'],d:[0,1,0,0,0,0,0,'距离'],lambda:[0,1,0,0,0,0,0,'波长'],
+ t:[0,0,1,0,0,0,0,'时间'],T:[0,0,1,0,0,0,0,'周期/时间'],
+ v:[0,1,-1,0,0,0,0,'速度'],c:[0,1,-1,0,0,0,0,'光速'],a:[0,1,-2,0,0,0,0,'加速度'],g:[0,1,-2,0,0,0,0,'重力加速度'],
+ omega:[0,0,-1,0,0,0,0,'角速度'],f:[0,0,-1,0,0,0,0,'频率'],rho:[1,-3,0,0,0,0,0,'密度'],
+ F:[1,1,-2,0,0,0,0,'力'],N:[1,1,-2,0,0,0,0,'支持力/力'],
+ E:[1,2,-2,0,0,0,0,'能量/功/热量'],W:[1,2,-2,0,0,0,0,'功/能量'],Ue:[1,2,-2,0,0,0,0,'能量'],
+ P:[1,2,-3,0,0,0,0,'功率'],p:[1,1,-1,0,0,0,0,'动量'],k:[1,0,-2,0,0,0,0,'劲度系数'],
+ J:[1,2,0,0,0,0,0,'转动惯量'],I:[0,0,0,1,0,0,0,'电流'],
+ q:[0,0,1,1,0,0,0,'电荷量'],Q:[0,0,1,1,0,0,0,'电荷量'],
+ U:[1,2,-3,-1,0,0,0,'电压/电动势'],V:[1,2,-3,-1,0,0,0,'电压'],
+ R:[1,2,-3,-2,0,0,0,'电阻'],B:[1,0,-2,-1,0,0,0,'磁感应强度'],
+ C:[-1,-2,4,2,0,0,0,'电容'],L_ind:[1,2,-2,-2,0,0,0,'电感'],
+ eps0:[-1,-3,4,2,0,0,0,'真空介电常数'],mu0:[1,1,-2,-2,0,0,0,'真空磁导率'],
+ G:[-1,3,-2,0,0,0,0,'引力常量'],h_planck:[1,2,-1,0,0,0,0,'普朗克常量'],
+ R_gas:[1,2,-2,0,-1,-1,0,'气体常量'],Temp:[0,0,0,0,1,0,0,'温度'],n_mol:[0,0,0,0,0,1,0,'物质的量'],
+ pi:[0,0,0,0,0,0,0,'无量纲常数']
+};
+const DLAB=['M','L','T','I','Θ','N','J'];
+function sup(x){if(Number.isInteger(x)){const m={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};return String(x).split('').map(c=>m[c]).join('')}return'^'+Number(x.toFixed(2))}
+function dimStr(v){const p=v.slice(0,7).map((e,i)=>e?DLAB[i]+(e===1?'':sup(e)):'').filter(Boolean);return p.length?p.join('·'):'1（无量纲）'}
+function knownDim(v){const k=v.slice(0,7).join(',');const M={'1,1,-2,0,0,0,0':'力 / 重量','1,2,-2,0,0,0,0':'能量 / 功 / 热量','1,2,-3,0,0,0,0':'功率','0,1,-1,0,0,0,0':'速度','0,1,-2,0,0,0,0':'加速度','0,0,1,0,0,0,0':'时间 / 周期','0,1,0,0,0,0,0':'长度 / 位移','1,1,-1,0,0,0,0':'动量 / 冲量','1,0,-2,-1,0,0,0':'磁感应强度','1,2,-3,-1,0,0,0':'电压 / 电动势','1,2,-3,-2,0,0,0':'电阻','0,0,1,1,0,0,0':'电荷量','1,2,0,0,0,0,0':'转动惯量','1,2,-1,0,0,0,0':'角动量 / 作用量'};return M[k]||''}
+function evalDim(ast){
+ const same=(x,y)=>x.slice(0,7).every((v,i)=>v===y[i]);
+ switch(ast.t){
+  case'num':case'id':{if(ast.t==='num')return Z7();const v=DIMVARS[ast.name];if(!v)throw new Error('未知变量「'+ast.name+'」');return v.slice(0,7)}
+  case'neg':return evalDim(ast.a);
+  case'bin':{const x=evalDim(ast.a),y=evalDim(ast.b);
+   if(ast.op==='+'||ast.op==='-'){if(!same(x,y))throw new Error('量纲不一致的加减：'+dimStr(x)+' 与 '+dimStr(y));return x.slice()}
+   return x.map((v,i)=>ast.op==='*'?v+y[i]:v-y[i])}
+  case'pow':{const base=evalDim(ast.a);let ex;try{ex=evalNum(ast.b,{pi:Math.PI,e:Math.E})}catch(e){throw new Error('指数必须是无量纲常数')}return base.map(v=>v*ex)}
+  case'call':{const n=ast.name.toLowerCase(),x=evalDim(ast.a);
+   if(n==='sqrt')return x.map(v=>v/2);
+   if(['sin','cos','tan','exp','ln','log'].includes(n)){const zero=x.slice(0,7).every(v=>v===0);if(!zero)throw new Error('「'+ast.name+'」的自变量必须无量纲，当前为 '+dimStr(x));return Z7()}
+   throw new Error('未知函数「'+ast.name+'」')}
+ }
+}
+function analyzeDim(src){
+ const parts=src.split('=');if(parts.length>2)throw new Error('只支持一个等号');
+ const vals=parts.map(p=>{if(!p.trim())throw new Error('等号两侧都要有内容');return evalDim(parseAST(p))});
+ const names=vals.map(v=>knownDim(v));
+ if(vals.length===2){const ok=vals[0].every((v,i)=>v===vals[1][i]);return{ok,dims:vals,names,note:ok?'两侧量纲一致 —— 这一条通过。注意：量纲一致只是必要条件，不能保证系数与符号正确。':'两侧量纲不一致 —— 公式必然错误。'}}
+ return{ok:true,dims:vals,names,note:'表达式量纲已算出。可用等号连接另一个表达式来检验一致性。'};
+}
+
+/* ---------------- 训练场 ---------------- */
+const P={current:null,hints:0,checked:false,correct:false,showSol:false,msg:''};
+function openProblem(pid){P.current=pid;P.hints=0;P.checked=false;P.correct=false;P.showSol=false;P.msg='';go('practice');setTimeout(()=>{const el=$('#pracDetail');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},60)}
+function renderPractice(){
+ const chips=[['全部','全部'],['初中','初中'],['高中','高中'],['我做错的','wrong'],['待复习','due']];
+ $('#pracChips').innerHTML=chips.map(c=>'<button class="chip '+(F.pracLevel===c[1]?'on':'')+'" data-l="'+c[1]+'">'+c[0]+'</button>').join('');
+ $$('#pracChips button').forEach(b=>b.onclick=()=>{F.pracLevel=b.dataset.l;renderPractice()});
+ let list=PROBLEMS.filter(p=>F.pracLevel==='全部'||(F.pracLevel==='初中'||F.pracLevel==='高中')&&p.level===F.pracLevel||F.pracLevel==='wrong'&&DB.wrong[p.id]||F.pracLevel==='due'&&dueList().includes(p.id));
+ $('#pracList').innerHTML=list.length?list.map(p=>{
+  const at=DB.attempts.filter(a=>a.pid===p.id&&a.mode==='answer'),ok=at.some(a=>a.correct),m=MODELS.find(x=>x.id===p.model);
+  return '<div class="card pcard" data-p="'+p.id+'"><div class="row"><span class="tag '+(p.level==='初中'?'green':'blue')+'">'+p.level+'竞赛</span><span class="tag">'+p.dom+'</span>'+(ok?'<span class="tag green">已答对</span>':'')+(DB.wrong[p.id]?'<span class="tag red">错题本</span>':'')+'</div><div class="pt">'+esc(p.title)+'</div><div class="pm">'+esc(m?m.name:'综合')+' · '+p.answers.length+' 个空 · 做过 '+at.length+' 次</div></div>';
+ }).join(''):'<div class="empty">这个筛选下还没有题目。</div>';
+ $$('#pracList .pcard').forEach(c=>c.onclick=()=>openProblem(c.dataset.p));
+ renderPracDetail();
+}
+function renderPracDetail(){
+ const box=$('#pracDetail');if(!P.current){box.innerHTML='<div class="card pad" style="margin-bottom:14px"><div class="spread"><div><h3>从右侧（或下方）题目列表选一题</h3><p class="muted tiny" style="margin:4px 0 0">训练流程：读题 → 逐级提示 → 提交数值答案 → 查看分步解析 → 错因归档。</p></div><button class="btn" id="btnSelfCheck">解题自检清单</button></div></div>';$('#btnSelfCheck').onclick=()=>openModal('<h3>动笔前的八道自检</h3><ol class="clean">'+CHECKLIST.map(c=>'<li>'+esc(c)+'</li>').join('')+'</ol><div class="notice" style="margin-top:14px">量纲一致只是必要条件；系数、符号与适用条件仍要单独检查。</div>');return}
+ const p=PROBLEMS.find(x=>x.id===P.current),m=MODELS.find(x=>x.id===p.model);
+ let h='<div class="card pad" style="margin-bottom:14px"><div class="spread"><div class="row"><span class="tag '+(p.level==='初中'?'green':'blue')+'">'+p.level+'竞赛</span><span class="tag">'+p.dom+'</span><span class="tag orange">'+esc(m?m.name:'综合')+'</span></div><button class="btn sm" id="btnCloseP">收起</button></div>'+
+  '<h3 style="margin:12px 0 6px">'+esc(p.title)+'</h3><p style="font-size:13.2px;line-height:1.85;color:var(--ink2);margin:0 0 10px">'+esc(p.text)+'</p>'+
+  '<div class="row"><button class="btn sm" id="btnHint">给点提示（'+Math.min(P.hints,3)+'/3）</button><button class="btn sm" id="btnReveal">直接看解析</button><button class="btn sm" id="btnModel">相关模型</button></div>'+
+  '<div id="hintBox" style="margin-top:10px">'+p.hints.slice(0,P.hints).map((x,i)=>'<div class="hint"><b>提示 '+(i+1)+'：</b>'+esc(x)+'</div>').join('')+'</div>'+
+  '<div class="divider"></div><div style="font-size:12.5px;font-weight:650;margin-bottom:4px">填写答案（可输入数值或简单算式，如 <code>2*sqrt(3)</code>）</div>'+
+  p.answers.map((a,i)=>'<div class="blankrow"><label>'+esc(a.label)+'</label><input class="input" style="max-width:170px" id="ans_'+i+'" placeholder="数值" '+(P.checked?'disabled':'')+'><span class="unit">'+esc(a.unit)+'</span></div>').join('')+
+  '<div class="row" style="margin-top:10px"><button class="btn primary" id="btnSubmit" '+(P.checked?'disabled':'')+'>提交答案</button><button class="btn" id="btnResetP">换一题</button></div>'+
+  '<div id="answerMsg" style="margin-top:10px">'+(P.msg||'')+'</div>'+
+  (P.checked&&!P.correct?'<div class="blk" style="margin-top:10px"><label class="tiny muted">错因归类（用于错题本统计）</label><div class="row" id="reasonBtns">'+['概念不清','模型识别','计算失误','审题漏条件'].map(r=>'<button class="btn sm" data-r="'+r+'">'+r+'</button>').join('')+'</div></div>':'')+
+  (P.showSol?'<div class="sol"><b style="color:var(--brand)">分步解析</b>'+p.solution.map((x,i)=>'<div class="step"><b>'+(i+1)+'.</b> '+esc(x)+'</div>').join('')+'<div class="notice warn" style="margin-top:10px"><b>易错点：</b>'+esc(p.trap)+'</div></div>':'')+
+  '</div>';
+ box.innerHTML=h;
+ $('#btnCloseP').onclick=()=>{P.current=null;renderPracDetail()};
+ $('#btnResetP').onclick=()=>{P.current=null;renderPracDetail()};
+ $('#btnHint').onclick=()=>{P.hints=Math.min(3,P.hints+1);renderPracDetail()};
+ $('#btnReveal').onclick=()=>{P.showSol=true;P.msg='<div class="notice">仅查看解析，不计入正确率，也不进入错题本。</div>';renderPracDetail()};
+ $('#btnModel').onclick=()=>{if(m){F.openModels.add(m.id);go('models')}};
+ const submit=$('#btnSubmit');if(submit)submit.onclick=()=>checkAnswer(p);
+ $$('#reasonBtns button').forEach(b=>b.onclick=()=>{if(DB.wrong[p.id]){DB.wrong[p.id].reason=b.dataset.r;save();P.msg='<div class="notice ok">已把错因记为「'+esc(b.dataset.r)+'」，并加入间隔复习队列。</div>';renderPracDetail()}});
+}
+function checkAnswer(p){
+ let vals=[],bad=false;
+ for(let i=0;i<p.answers.length;i++){const el=$('#ans_'+i);try{vals.push(parseAnswer(el.value))}catch(e){bad=true;P.msg='<div class="notice err">第 '+(i+1)+' 空：'+esc(e.message)+'</div>';break}}
+ if(bad){renderPracDetail();return}
+ const results=p.answers.map((a,i)=>{const d=Math.abs(vals[i]-a.value),tol=Math.max(Math.abs(a.value)*(a.tol||.01),.02);return{k:a.label,ok:d<=tol,yours:vals[i],right:a.value,unit:a.unit}});
+ const correct=results.every(r=>r.ok);
+ P.checked=true;P.correct=correct;P.showSol=correct;
+ DB.attempts.push({pid:p.id,correct,ts:Date.now(),mode:'answer'});markToday();
+ if(correct){
+  const w=DB.wrong[p.id];
+  if(w){const ints=[1,3,7,15,30];w.stage=(w.stage||0)+1;if(w.stage>=ints.length){delete DB.wrong[p.id];P.msg='<div class="notice ok"><b>答对了！</b>这道题已完成全部复习轮次，移出错题本。</div>'}else{w.due=Date.now()+ints[w.stage]*DAY;P.msg='<div class="notice ok"><b>答对了！</b>下次复习安排在 '+ints[w.stage]+' 天后。</div>'}}
+  else P.msg='<div class="notice ok"><b>全对！</b> '+results.map(r=>r.k+' = '+fmtNum(r.yours,4)+' '+r.unit).join('；')+'</div>';
+ }else{
+  const detail=results.map(r=>(r.ok?'✓ ':'✗ ')+r.k+'：你填 '+fmtNum(r.yours,4)+(r.ok?'':'，正确 '+fmtNum(r.right,4))+' '+r.unit).join('　');
+  P.msg='<div class="notice err"><b>还差一点。</b><br>'+esc(detail)+'<br>先回到提示 '+(P.hints<3?P.hints+1:3)+'，再试一次；也可以直接看解析并归档错因。</div>';
+  const w=DB.wrong[p.id]||{added:Date.now(),stage:0,count:0,reason:'未归类'};
+  w.stage=0;w.count=(w.count||0)+1;w.due=Date.now()+DAY;DB.wrong[p.id]=w;
+ }
+ save();renderPracDetail();topbar();
+}
+
+/* ---------------- 错题本 ---------------- */
+function renderWrong(){
+ const entries=Object.entries(DB.wrong),due=dueList().length,graded=DB.attempts.filter(a=>a.mode==='answer'&&a.correct).length;
+ $('#wrongStats').innerHTML=[
+  statCard('错题总数',entries.length,'含已完成复习轮次的题目','#c33c42'),
+  statCard('今日待复习',due,'到期后会出现在总览','#d97633'),
+  statCard('累计答对次数',graded,'同一题多次作答分别计','#0d8266'),
+  statCard('覆盖领域',new Set(entries.map(([id])=>(PROBLEMS.find(p=>p.id===id)||{}).dom)).size+' / '+DOMAINS.length,'按错题所属领域统计','#2f56cc')
+ ].join('');
+ $('#wrongList').innerHTML=entries.length?entries.map(([id,w])=>{
+  const p=PROBLEMS.find(q=>q.id===id),d=new Date(w.due),isDue=w.due<=Date.now(),days=Math.max(0,Math.ceil((w.due-Date.now())/DAY));
+  return '<div class="item" style="margin-bottom:9px"><div class="head" style="cursor:default"><span class="tag '+(isDue?'red':'blue')+'">'+(isDue?'待复习':days+' 天后')+'</span><span class="t">'+esc(p?p.title:id)+'</span><span class="tag">错因：'+esc(w.reason||'未归类')+'</span><button class="btn sm" data-open="'+id+'">重新作答</button><button class="btn sm" data-del="'+id+'">移除</button></div></div>';
+ }).join(''):'<div class="empty">错题本还是空的。答错或主动归档后会自动出现在这里。</div>';
+ $$('#wrongList [data-open]').forEach(b=>b.onclick=()=>openProblem(b.dataset.open));
+ $$('#wrongList [data-del]').forEach(b=>b.onclick=()=>{delete DB.wrong[b.dataset.del];save();renderWrong();topbar()});
+ $('#btnReviewDue').onclick=()=>{const d=dueList();if(!d.length){openModal('<h3>暂无到期题目</h3><p>当前没有需要复习的错题。可以先去训练场做新题，或稍后再来。</p>');return}openProblem(d[0])};
+ const counts={};entries.forEach(([,w])=>{const r=w.reason||'未归类';counts[r]=(counts[r]||0)+1});
+ const max=Math.max(1,...Object.values(counts));
+ $('#reasonChart').innerHTML=Object.keys(counts).length?Object.entries(counts).map(([k,v])=>'<div style="display:flex;align-items:center;gap:10px;margin:7px 0"><span style="width:80px;font-size:12px;color:var(--ink2)">'+esc(k)+'</span><div class="bar" style="flex:1;height:12px"><i style="width:'+(v/max*100)+'%;background:var(--accent)"></i></div><b class="mono" style="width:24px;text-align:right">'+v+'</b></div>').join(''):'<div class="empty">还没有错因数据。</div>';
+}
+
+/* ---------------- 工具箱 ---------------- */
+function renderToolbox(){
+ const examples=['F = m*a','E = 0.5*m*v^2','T = 2*pi*sqrt(L/g)','r = m*v/(q*B)','P = U*I','v + a'];
+ $('#dimExamples').innerHTML=examples.map(e=>'<button class="btn sm" data-e="'+esc(e)+'">'+esc(e)+'</button>').join('');
+ $$('#dimExamples button').forEach(b=>b.onclick=()=>{$('#dimExpr').value=b.dataset.e;runDim()});
+ $('#dimExpr').oninput=runDim;
+ $('#dimTable').innerHTML=Object.entries(DIMVARS).map(([k,v])=>'<tr><td class="mono"><b>'+esc(k)+'</b></td><td>'+esc(v[7])+'</td><td class="mono">'+esc(dimStr(v))+'</td></tr>').join('');
+ $('#constSearch').value='';$('#constSearch').oninput=e=>renderConsts(e.target.value);renderConsts('');
+ $('#checkList').innerHTML=CHECKLIST.map((c,i)=>'<div class="check"><span class="tag">'+(i+1)+'</span><span>'+esc(c)+'</span></div>').join('');
+ $('#approxList').innerHTML=APPROX.map(a=>'<div class="kv"><span class="k mono">'+esc(a[0])+'</span><span class="v" style="font-family:inherit;font-weight:400;color:var(--ink2)">'+esc(a[1])+'</span></div>').join('');
+ $('#integralList').innerHTML=INTEGRALS.map(a=>'<div class="kv"><span class="k mono">'+esc(a[0])+'</span><span class="v" style="font-family:inherit;font-weight:400;color:var(--ink2)">'+esc(a[1])+'</span></div>').join('');
+ runDim();
+}
+function renderConsts(q){
+ const s=q.trim().toLowerCase();
+ const rows=CONSTANTS.filter(c=>!s||c.join(' ').toLowerCase().includes(s));
+ $('#constList').innerHTML=rows.length?rows.map(c=>'<div class="kv"><span class="k">'+esc(c[0])+'</span><span class="v">'+esc(c[1])+' <span class="muted tiny">'+esc(c[2])+'</span></span></div>').join(''):'<div class="empty">没有匹配的常数。</div>';
+}
+function runDim(){
+ const src=$('#dimExpr').value,box=$('#dimResult');
+ try{
+  const r=analyzeDim(src);
+  const dimLine=r.dims.map((d,i)=>'<div class="kv"><span class="k">'+(r.dims.length===2?(i===0?'左式':'右式'):'表达式')+'量纲</span><span class="v">'+esc(dimStr(d))+(r.names[i]?'　<span class="tag green">'+esc(r.names[i])+'</span>':'')+'</span></div>').join('');
+  box.innerHTML=dimLine+'<div class="notice '+(r.ok?'ok':'err')+'" style="margin-top:10px"><b>'+(r.ok?'通过':'不通过')+'</b> · '+esc(r.note)+'</div>';
+ }catch(e){box.innerHTML='<div class="notice err"><b>检验中断：</b>'+esc(e.message)+'</div><div class="tiny muted" style="margin-top:8px">支持 + − × ÷ ^ ( )、sqrt()、pi；变量名见下方表格。</div>'}
+}
+
+/* ---------------- 设计说明 ---------------- */
+function renderAbout(){
+ const q=[
+  ['目标与痛点','初高中物理竞赛的难点不在「记住公式」，而在识别模型、判断公式适用条件、把抽象过程可视化；更前置的问题是「为什么愿意学」。所以工具同时做两条线：一条通向解题能力，一条通向好奇心的保护 —— 先用反直觉现象把人拉进来，再给模型、仿真与错题闭环。'],
+  ['设计原则','① 先提示后答案：训练场分三级提示；趣味思考题先让你写下猜想再揭晓，避免「看懂了」代替「想过了」。② 每个公式带适用条件与易错点；有争议的现象（如姆潘巴效应）明确写「尚未确立」。③ 能验证的必须验证：仿真并列数值解与解析解，题库答案经独立计算核验。④ 错因归类 + 间隔复习，让错题本产生复习队列。⑤ 数据落服务端，离线时明确标注降级，绝不假装已同步。'],
+  ['模块架构','总览（诊断/路径/雷达/每日一奇） → 知识图谱（20 个知识点） → 模型库（12 个竞赛模型） → 奇思妙想（12 个反直觉思考题） → 仿真室（6 个数值实验） → 训练场（14 道分级题） → 错题本（1/3/7/15/30 天） → 工具箱（量纲分析器、常数、自检清单）。作答记录单向驱动雷达、薄弱领域推荐、错因分布与复习队列。'],
+  ['Python 后端 + Poetry 隔离','后端是 app.py（FastAPI + uvicorn）：静态托管 index.html 与五个接口。GET /api/health 健康检查；GET/PUT /api/state?uid=… 读写按用户隔离的学习数据；GET/POST /api/ideas 共享猜想墙；GET /api/docs 自动接口文档。数据落盘 data/store.json（临时文件 + os.replace 原子替换，线程锁串行写入）。pyproject.toml + poetry.toml 把虚拟环境固定为项目内 .venv/，poetry.lock 锁定版本；启动：poetry install → poetry run python app.py（PORT / HOST 可配置）。全程不执行全局 pip install，不污染系统 Python。前端可用 window.PHYS_API_BASE 指向其它部署。'],
+  ['同步与降级策略','浏览器为每台设备生成 uid；启动时先探活，再比较服务端与本机 updatedAt，取较新的一份，随后回写。每次修改 650 ms 防抖推送；服务不可用时界面显示「仅本机缓存」，学习数据暂存 localStorage，恢复后点击顶部状态即可重新同步。猜想墙是跨浏览器共享数据，必须服务端在线才能发布 —— 这一项不降级，避免出现「以为发出去了其实没有」。'],
+  ['趣味思考题怎么设计','每题六段：直觉陷阱 → 引导提问 → 我的猜想（输入框，自动同步到服务端）→ 揭晓（含关键公式）→ 在家动手试 → 更奇妙的是。刻意加入一题科学方法题（热水先结冰吗），训练「现象被命名 ≠ 机制被确认」。猜想可分享到服务端猜想墙，让好奇心变成可看见的互动。'],
+  ['技术约束','前端单文件、无构建、无 CDN；后端 Python 3.10+，依赖仅 fastapi / uvicorn，全部装在 Poetry 创建的 .venv/ 内；Canvas 2D 实时绘制；运动方程用四阶 Runge–Kutta 或精确指数步推进（子步 ≤ 1/240 s）；表达式解析用自写递归下降解析器，不使用 eval；请求体限 512 KB、学习数据限 256 KB、猜想限 300 字并过滤控制字符。'],
+  ['质量门（已执行）','① 题库 14 题共 27 个数值结果用独立脚本逐条复算，全部一致（含 √30、2√3、15.4%、3.28×10⁻⁷ s）。② 公式均标注适用条件：单摆小角、线性阻力、纯电阻导轨、理想气体单原子等。③ 仿真内置解析对照：抛体射程/最高点、斜面往返速度、阻尼周期实测、单摆椭圆积分精确周期、导轨 v₀e^(−t/τ) 与动量/能量校核。④ Poetry 虚拟环境、依赖锁文件与全部接口逐条实测：健康检查、状态写入读回、猜想发布与列表、异常入参拒绝。⑤ 九个视图均经无头浏览器渲染回归，无脚本异常。'],
+  ['已知边界（不夸大）','① 斜面模型把静/动摩擦系数合并为同一个 μ。② 磁场实验动画相位按可视化速率推进（真实周期约 10⁻⁷ s），示意图半径已归一化。③ 单摆精确周期公式严格只适用于无阻尼。④ 抛体采用线性阻力 F = −bv，高速常为二次阻力。⑤ 服务端是单机轻量实现（JSON 文件存储、uid 未做登录鉴权、CORS 放开），适合本机/局域网教学，不是面向公网的多租户系统。⑥ 训练场只判数值答案；趣味题不做评分；不替代教材、真题与教师指导。'],
+  ['可扩展方向','换成 SQLite 或加账号登录；接入真题卷与限时模式；多解对照（能量法 vs 动力学法）；仿真参数与题目联动成「可改数的题」；按竞赛考纲版本（初中联赛 / 高中预赛 / 复赛）切换内容权重。']
+ ];
+ $('#aboutBody').innerHTML='<div class="grid g2">'+q.map(x=>'<div class="card pad"><h3 style="color:var(--brand)">'+esc(x[0])+'</h3><p style="font-size:12.8px;color:var(--ink2);line-height:1.9;margin:8px 0 0">'+esc(x[1])+'</p></div>').join('')+'</div>'+
+  '<div class="card pad" style="margin-top:14px"><h3>数据流与服务边界</h3><div class="row" style="margin-top:10px;font-size:12.5px">'+['知识图谱','模型库','奇思妙想','仿真室','训练场','错题本','今日任务'].map((x,i)=>'<span class="tag blue" style="font-size:12.5px;padding:6px 12px">'+x+'</span>'+(i<6?'<span class="muted">→</span>':'')).join('')+'</div><p class="tiny muted" style="margin-top:10px">所有学习状态经 /api/state 写入服务端 data/store.json；猜想墙经 /api/ideas 在访问者之间共享；浏览器 localStorage 只作为断线缓存。</p></div>';
+}
+function openModal(html){$('#modal').innerHTML=html+'<div class="row" style="margin-top:18px"><button class="btn primary" id="modalClose">关闭</button></div>';$('#mask').classList.add('on');$('#modalClose').onclick=closeModal}
+function closeModal(){$('#mask').classList.remove('on')}
+$('#mask').addEventListener('click',e=>{if(e.target.id==='mask')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ---------------- 启动 ---------------- */
+selectSim('proj');
+const initialView=(location.hash||'').replace(/^#/,'');
+go(META[initialView]?initialView:'dashboard');
+requestAnimationFrame(labTick);
+bootSync();
+</script>
+</body>
+</html>
