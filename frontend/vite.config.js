@@ -1,7 +1,12 @@
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+// GitHub Pages 把站点挂在 /physical_study/ 下，CI 构建时通过 PAGES_BASE 指定子路径；
+// 本地开发/构建仍用根路径 '/'，行为不变。
+const base = process.env.PAGES_BASE || '/'
+
 export default defineConfig({
+  base,
   plugins: [vue()],
   server: {
     port: 5173,
