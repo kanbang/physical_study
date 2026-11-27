@@ -9,8 +9,12 @@ import {BASE_PROBLEMS} from '../src/data/problems.js'
 import {BASE_WONDERS} from '../src/data/wonders.js'
 import {TOPICS} from '../src/data/topics.js'
 import {ADDON_WONDERS} from '../src/data/addons/01-wonders.js'
-import {ADDON_PROBLEMS} from '../src/data/addons/02-problems.js'
+import {ADDON_PROBLEMS as ADDON_PROBLEMS_02} from '../src/data/addons/02-problems.js'
+import {ADDON_PROBLEMS as ADDON_PROBLEMS_03} from '../src/data/addons/03-wall-spring.js'
+import {ADDON_PROBLEMS as ADDON_PROBLEMS_04} from '../src/data/addons/04-force-triangle.js'
 import {renderMath, stripDelims, toSegments} from '../src/lib/tex.js'
+
+const ADDON_PROBLEMS = ADDON_PROBLEMS_02.concat(ADDON_PROBLEMS_03, ADDON_PROBLEMS_04)
 
 const noKatexError = html => !String(html).includes('katex-error')
 
@@ -57,7 +61,7 @@ test('新增内容 id 不与内置题库重复，且自身不重复', () => {
   const wids = BASE_WONDERS.concat(ADDON_WONDERS).map(x => x.id)
   assert.equal(new Set(pids).size, pids.length)
   assert.equal(new Set(wids).size, wids.length)
-  assert.equal(ADDON_PROBLEMS.length, 2)
+  assert.equal(ADDON_PROBLEMS.length, 4)
   assert.equal(ADDON_WONDERS.length, 3)
 })
 
@@ -129,4 +133,38 @@ test('数值核验：w16 压力熔化量级 / w17 微波波长 / w18 滚动时�
   assert.ok(Math.abs(3e8 / 2.45e9 - 0.122) < 0.002)
   const ratio = Math.sqrt((5 / 7) / (3 / 5))
   assert.ok(Math.abs(ratio - Math.sqrt(25 / 21)) < 1e-9 && Math.abs(ratio - 1.09) < 0.01)
+})
+
+test('数值核验：p17 直角挡板压缩弹簧（F 减小 / N 不变 / L 变长）', () => {
+  const ma = 1, mb = 2, k = 200, L0 = 1.2, g = 10
+  const calc = deg => {
+    const sn = Math.sin(deg * Math.PI / 180), cs = Math.cos(deg * Math.PI / 180)
+    const T = ma * g / sn, d = T / k, L = L0 - d
+    return {F: T * cs, N: (ma + mb) * g, L, x: L * cs, y: L * sn}
+  }
+  const a = calc(45), b = calc(60)
+  const got = ADDON_PROBLEMS.find(p => p.id === 'p17').answers.map(x => x.value)
+  assert.ok(Math.abs(got[0] - a.F) < 0.01)
+  assert.ok(Math.abs(got[1] - b.F) < 0.01)
+  assert.ok(Math.abs(got[2] - a.N) < 0.01 && Math.abs(a.N - b.N) < 1e-9)
+  assert.ok(Math.abs(got[3] - (b.L - a.L)) < 0.001)
+  assert.ok(b.F < a.F && b.L > a.L && b.x < a.x && b.y > a.y)
+})
+
+test('数值核验：p18 三力平衡（Tₐ 变小 / Tᵦ 变大 / 示数对调）', () => {
+  const Ta0 = 5.8, S120 = Math.sin(120 * Math.PI / 180)
+  const G = Ta0 * S120
+  const read = phi => {
+    const alpha = 60 - phi
+    return {Ta: G * Math.sin((150 - alpha) * Math.PI / 180) / S120,
+            Tb: G * Math.cos(alpha * Math.PI / 180) / S120}
+  }
+  const a = read(0), b = read(60)
+  const got = ADDON_PROBLEMS.find(p => p.id === 'p18').answers.map(x => x.value)
+  assert.ok(Math.abs(got[0] - Ta0) < 0.01)
+  assert.ok(Math.abs(got[1] - G) < 0.01)
+  assert.ok(Math.abs(got[2] - a.Tb) < 0.01 && Math.abs(a.Tb - 2.9) < 0.01)
+  assert.ok(Math.abs(got[3] - b.Ta) < 0.01 && Math.abs(b.Ta - 2.9) < 0.01)
+  assert.ok(Math.abs(got[4] - b.Tb) < 0.01 && Math.abs(b.Tb - Ta0) < 0.01)
+  assert.ok(b.Ta < a.Ta && b.Tb > a.Tb)
 })
